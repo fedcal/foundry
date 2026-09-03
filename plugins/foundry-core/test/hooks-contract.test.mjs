@@ -676,6 +676,74 @@ describe('stop-verify: the arms that decide whether a completion claim is eviden
   });
 });
 
+/**
+ * The context firewall is a hard token cap on every subagent return, and it carries
+ * no matcher: whatever it does, it does to every subagent in the project. Only its
+ * deny path was tested, which left both dangerous directions unproven — that it stays
+ * out of projects that never opted in, and that it cannot be talked out of firing by
+ * an enforcement level that does not govern it.
+ */
+describe('subagent-firewall: opt-in, the budget arithmetic, and what may switch it off', () => {
+  const handoff = (root, message, extra = {}) =>
+    runHook('subagent-firewall.mjs', { agent_type: 'tech-scout', last_assistant_message: message, ...extra }, root);
+
+  const configure = (root, cfg) => fs.writeFileSync(path.join(root, '.foundry', 'config.json'), JSON.stringify(cfg));
+
+  test('stays silent — and leaves no .foundry behind — in a project that never ran `foundry init`', () => {
+    const root = freshRoot();
+    assert.equal(handoff(root, 'x'.repeat(5000)), null, 'SubagentStop carries no matcher: without this guard, installing foundry-core caps every subagent on the machine');
+    assert.ok(!fs.existsSync(path.join(root, '.foundry')), 'recordMetric must not create a .foundry tree in a project that never opted in');
+  });
+
+  test('a handoff inside the budget passes and is still counted', () => {
+    const root = initRoot();
+    assert.equal(handoff(root, 'Wrote the findings to .foundry/blackboard/w1/scan.json. Two criticals.'), null);
+    const events = fs.readFileSync(path.join(root, '.foundry', 'metrics', 'events.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
+    assert.ok(events.some((e) => e.kind === 'subagent_return' && e.agent === 'tech-scout' && typeof e.tokens === 'number'),
+      'the firewall measures every return, not only the ones it rejects — that log is the evidence for tuning the budget');
+  });
+
+  test('the hard limit is three times the configured budget, and the boundary itself passes', () => {
+    const root = initRoot();
+    configure(root, { handoffSummaryTokenBudget: 10 }); // hard limit 30 tokens ≈ 120 chars
+    assert.equal(handoff(root, 'x'.repeat(120)), null, 'exactly at the hard limit is inside it');
+
+    const out = handoff(root, 'x'.repeat(124));
+    assert.equal(out?.decision, 'block', 'one token past the hard limit is over it');
+    assert.match(out.reason, /30-token hard limit/);
+    assert.match(out.reason, /target: 10/, 'the agent is told the target to rewrite to, not just the wall it hit');
+    assert.match(out.reason, /blackboard_write/, 'a rejection with no route out of it just costs the parent another turn');
+  });
+
+  test('a budget of the wrong type falls back to 300 instead of denying a four-token handoff', () => {
+    const root = initRoot();
+    // config() type-checks this key and keeps the built-in default, so a null budget can
+    // no longer reach the hook as NaN and reject everything. Both halves are asserted:
+    // the small handoff passes, and the large one names the default-derived 900.
+    configure(root, { handoffSummaryTokenBudget: null });
+    assert.equal(handoff(root, 'Done. See the artifact.'), null);
+    assert.match(handoff(root, 'x'.repeat(5000)).reason, /900-token hard limit/);
+  });
+
+  test('enforcement: off switches the firewall off', () => {
+    const root = initRoot();
+    configure(root, { enforcement: 'off' });
+    assert.equal(handoff(root, 'x'.repeat(5000)), null);
+  });
+
+  test('enforcement: warn does NOT switch it off — handoffSummaryTokenBudget governs it (fact-0009)', () => {
+    const root = initRoot();
+    configure(root, { enforcement: 'warn', handoffSummaryTokenBudget: 300 });
+    assert.equal(handoff(root, 'x'.repeat(5000))?.decision, 'block',
+      'warn softens the Bash rules from deny to ask and nothing else; only enforcement: off may silence this gate');
+  });
+
+  test('an empty return is not a budget violation', () => {
+    const root = initRoot();
+    assert.equal(handoff(root, ''), null, 'there is nothing to measure, and blocking here would strand a subagent that legitimately returned nothing');
+  });
+});
+
 describe('robustness: malformed JSON and missing fields never crash a hook or write to stderr', () => {
   for (const file of ALL_HOOK_FILES) {
     test(`${file} handles malformed JSON on stdin`, () => {
