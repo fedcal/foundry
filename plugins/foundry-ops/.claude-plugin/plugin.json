@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin.json",
+  "name": "foundry-ops",
+  "displayName": "Foundry Operations",
+  "version": "0.1.0",
+  "description": "Delivery and deploy: GitHub Actions pipelines, containers and Kubernetes, Terraform/OpenTofu, cloud and PaaS targets, release engineering.",
+  "author": {
+    "name": "Federico Calò",
+    "url": "https://federicocalo.dev"
+  },
+  "homepage": "https://fedcal.github.io/foundry",
+  "repository": "https://github.com/fedcal/foundry",
+  "license": "Apache-2.0",
+  "keywords": [
+    "claude-code",
+    "foundry",
+    "cicd",
+    "docker",
+    "kubernetes",
+    "terraform",
+    "cloud",
+    "release"
+  ],
+  "metadata": {
+    "foundry.vertical": "operations",
+    "foundry.contracts": "v1"
+  },
+  "dependencies": [
+    {
+      "name": "foundry-core",
+      "version": "^0.1.0"
+    }
+  ],
+  "defaultEnabled": false
+}

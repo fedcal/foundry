@@ -1,0 +1,47 @@
+name: Feature request
+description: Propose a change in behaviour or a new capability
+labels: ["type:feature", "status:needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Large changes need an RFC before code — see
+        [GOVERNANCE.md](../blob/{{DEFAULT_BRANCH}}/GOVERNANCE.md). This form is the place to
+        start that conversation.
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What are you unable to do today? Describe the situation, not the solution.
+    validations: { required: true }
+  - type: textarea
+    id: workaround
+    attributes:
+      label: What you do instead today
+      description: Current workaround and what it costs you. "Nothing" is a valid answer.
+    validations: { required: true }
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behaviour
+      description: Show the interface as you would like to use it.
+      render: shell
+  - type: dropdown
+    id: breaking
+    attributes:
+      label: Would this change existing behaviour?
+      options: ["No", "Yes — existing users would need to change something", "Not sure"]
+    validations: { required: true }
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you considered
+      description: Including doing it outside {{PROJECT}}.
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Contribution
+      options:
+        - label: I am willing to implement this if it is accepted
+        - label: I agree to the Code of Conduct
+          required: true

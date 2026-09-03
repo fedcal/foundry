@@ -1,0 +1,49 @@
+section,item,,value,,notes
+DEFINITIONS,write these once and never change them silently,,,,a metric without a written definition is an argument waiting to happen
+,"definition of ""customer""",,<<TBC>>,,exclude free users or say you included them
+,"definition of ""active""",,<<TBC>>,,e.g. >=1 authenticated session in the period
+,what is INCLUDED in CAC,,<<TBC: paid media + sales salaries + commission + marketing salaries + tooling + agency + growth eng time>>,,ad spend only understates CAC by an unknowable factor
+,attribution model,,<<TBC: first-touch | last-touch | linear | none>>,,channel CACs shift materially with this choice
+,CAC lag handling,,<<TBC: numerator lagged by sales cycle | long window>>,,dividing this month's spend by this month's customers is wrong when spend is changing
+,period covered,,<<TBC>>,,
+,sample size (customers) — row 9,,<<TBC>>,,state it; everything below rests on it
+,,,,,
+PARAMETERS,item,,value,,notes
+,annual discount rate r — row 12,,<<TBC: r>>,,state the basis; never a value from memory
+,,,,,
+BLENDED,metric,,value,,formula
+,fully loaded S&M in period — row 15,,<<TBC: [measured]>>,,must reconcile with S&M in pl-monthly.csv row 17
+,new customers in period — row 16,,<<TBC: [measured]>>,,new only — not total customers
+,CAC — row 17,,"=IF(D16=0,"""",D15/D16)",,S&M / new customers
+,ARPA monthly — row 18,,<<TBC: [measured]>>,,
+,gross margin % attributable — row 19,,<<TBC: [measured]>>,,attributable margin — not company-wide if they differ
+,gross profit per customer per month — row 20,,"=D18*D19",,ARPA x GM%
+,CAC payback months — row 21,,"=IF(D20=0,"""",D17/D20)",,CAC / monthly gross profit — NOT on revenue
+,monthly logo churn — row 22,,<<TBC: [measured] or [ASSUMPTION]>>,,
+,monthly revenue churn net of expansion — row 23,,<<TBC: [measured]>>,,can differ hugely from logo churn
+,monthly discount rate — row 24,,"=IF(D12="""","""",(1+D12)^(1/12)-1)",,derived from the annual rate in row 12
+,LTV undiscounted — row 25,,"=IF(D22=0,"""",D20/D22)",,ARPA x GM% / churn — inflated when churn is low
+,LTV discounted — row 26,,"=IF((D22+D24)=0,"""",D20/(D22+D24))",,ARPA x GM% / (churn + discount) — USE THIS ONE
+,implied average customer life months — row 27,,"=IF(D22=0,"""",1/D22)",,if this exceeds ~60 the undiscounted LTV is indefensible
+,LTV / CAC discounted — row 28,,"=IF(D17=0,"""",D26/D17)",,HEURISTIC benchmark ~3 — not a law
+,,,,,
+BY CHANNEL,channel,spend,new customers,CAC,capacity limit (the honesty test)
+,<<TBC>>,<<TBC>>,<<TBC>>,"=IF(D31=0,"""",C31/D31)",<<TBC: reps x meetings | audience size | publication rate>>
+,<<TBC>>,<<TBC>>,<<TBC>>,"=IF(D32=0,"""",C32/D32)",<<TBC>>
+,<<TBC>>,<<TBC>>,<<TBC>>,"=IF(D33=0,"""",C33/D33)",<<TBC>>
+,,,,,
+COHORTS,cohort month,customers at start,retained M+3,retained M+6,retained M+12
+,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>
+,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>
+,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>
+,cohorts with >=12 months of data,,<<TBC>>,,under 12 months: present these curves INSTEAD of an LTV number
+,,,,,
+CHECKS,item,,status,,
+,CAC fully loaded and its scope written out in row 5,,<<TBC>>,,
+,CAC segmented by channel with capacity limits,,<<TBC>>,,a blended CAC scales the worst channel
+,LTV uses gross profit not revenue,,<<TBC>>,,
+,LTV shown discounted AND undiscounted,,<<TBC>>,,
+,logo churn and revenue churn both reported,,<<TBC>>,,
+,payback computed on gross profit and on cash,,<<TBC>>,,billing basis changes cash payback dramatically
+,S&M in row 15 equals S&M in pl-monthly.csv row 17,,<<TBC>>,,the classic silent inconsistency between tabs
+,LTV/CAC labelled a heuristic not a law,,<<TBC>>,,

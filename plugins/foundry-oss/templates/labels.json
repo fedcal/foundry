@@ -1,0 +1,37 @@
+[
+  { "name": "type:bug", "color": "d73a4a", "description": "Behaves differently from the documentation" },
+  { "name": "type:regression", "color": "b60205", "description": "Worked in a previous release" },
+  { "name": "type:feature", "color": "0e8a16", "description": "New capability or changed behaviour" },
+  { "name": "type:docs", "color": "0075ca", "description": "Documentation only" },
+  { "name": "type:support", "color": "c5def5", "description": "Usage question, not a defect" },
+  { "name": "type:security", "color": "5319e7", "description": "Security impact — handle per SECURITY.md" },
+  { "name": "type:chore", "color": "ededed", "description": "Build, CI, dependencies, housekeeping" },
+
+  { "name": "status:needs-triage", "color": "fbca04", "description": "Not yet classified — removed by every triage pass" },
+  { "name": "status:needs-info", "color": "fef2c0", "description": "Waiting on the reporter" },
+  { "name": "status:needs-reproduction", "color": "fef2c0", "description": "Not yet reproduced by a maintainer" },
+  { "name": "status:needs-decision", "color": "d4c5f9", "description": "Waiting on a maintainer decision, not on code" },
+  { "name": "status:confirmed", "color": "1d76db", "description": "Reproduced with a recorded command and version" },
+  { "name": "status:blocked", "color": "e99695", "description": "Blocked by an external dependency" },
+  { "name": "status:stale", "color": "cccccc", "description": "Inactive; will close per the stale policy" },
+
+  { "name": "priority:p0", "color": "b60205", "description": "Work stops; hotfix release" },
+  { "name": "priority:p1", "color": "d93f0b", "description": "Next scheduled release" },
+  { "name": "priority:p2", "color": "fbca04", "description": "Accepted, unscheduled" },
+  { "name": "priority:p3", "color": "ededed", "description": "Accepted in principle, no commitment" },
+
+  { "name": "sev:critical", "color": "b60205", "description": "Data loss, security compromise, or no workaround" },
+  { "name": "sev:high", "color": "d93f0b", "description": "Core feature unusable; costly workaround" },
+  { "name": "sev:medium", "color": "fbca04", "description": "Degraded; documented workaround exists" },
+  { "name": "sev:low", "color": "ededed", "description": "Cosmetic or edge configuration" },
+
+  { "name": "effort:xs", "color": "c2e0c6", "description": "Under an hour" },
+  { "name": "effort:s", "color": "c2e0c6", "description": "Under half a day" },
+  { "name": "effort:m", "color": "c2e0c6", "description": "Under two days" },
+  { "name": "effort:l", "color": "c2e0c6", "description": "More than two days" },
+
+  { "name": "good first issue", "color": "7057ff", "description": "Verified: reproduced, located, bounded, testable, unclaimed" },
+  { "name": "help wanted", "color": "008672", "description": "Maintainers want a contributor to take this" },
+  { "name": "breaking-change", "color": "b60205", "description": "Requires a major release" },
+  { "name": "exempt-stale", "color": "ffffff", "description": "Never auto-closed" }
+]

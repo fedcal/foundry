@@ -1,0 +1,18 @@
+# Routes non-defect traffic away from the issue tracker. This is the single most effective
+# maintainer-load control in this template set: keep the issue tracker for defects.
+blank_issues_enabled: false
+contact_links:
+  - name: Question or help
+    url: {{QUESTION_CHANNEL_URL}}
+    about: Usage questions are answered here, not in issues.
+  - name: Report a vulnerability
+    url: https://github.com/{{REPO}}/security/advisories/new
+    about: Private disclosure. Never open a public issue for a security problem.
+  - name: Documentation
+    url: {{DOCS_URL}}
+    about: Check here first — most questions are answered already.
+<!-- OPT:DISCUSSIONS -->
+  - name: Ideas and proposals
+    url: https://github.com/{{REPO}}/discussions/categories/ideas
+    about: Discuss a change before it becomes an RFC.
+<!-- /OPT -->

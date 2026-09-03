@@ -1,0 +1,162 @@
+---
+title: Architettura
+description: Un kernel e nove verticali, perché ogni verticale dichiara una dipendenza dal kernel e che cosa vive davvero in ciascuna directory.
+sidebar:
+  order: 1
+---
+
+import { FileTree, Aside } from '@astrojs/starlight/components';
+
+Foundry è un solo marketplace con dodici plugin. Uno di essi, `foundry-core`, possiede tutto lo stato
+e tutto il meccanismo. Gli altri otto possiedono agenti e skill, e nessuno stato.
+
+## Kernel e verticali
+
+La separazione non è ordine organizzativo. Esiste perché un verticale possa essere scritto da chi
+non ha mai letto il kernel e interoperare comunque con gli altri otto: il verticale produce JSON che
+soddisfa uno schema del kernel, lo scrive dove il kernel se lo aspetta ed è soggetto ai gate del
+kernel.
+
+| Livello | Plugin | Possiede |
+|---|---|---|
+| Kernel | `foundry-core` | Lo stato `.foundry/`, i dieci schemi di contratto, il server MCP, la CLI, tutti e dieci gli hook, tre workflow, tre output style |
+| Verticale | gli altri otto | Agenti e skill di un dominio. Nessun hook, nessuno schema, nessuno stato. |
+
+`foundry-core` ha `defaultEnabled: true`. Ogni verticale ha `defaultEnabled: false` e:
+
+```json
+"dependencies": [{ "name": "foundry-core", "version": "^0.1.0" }]
+```
+
+### Perché `dependencies` conta
+
+Senza quella dichiarazione un verticale sarebbe installabile da solo, e ognuna delle sue assunzioni
+fallirebbe in silenzio:
+
+- `.foundry/memory/`, `.foundry/blackboard/` e `.foundry/config.json` non esisterebbero, quindi
+  `memory_search` e `blackboard_write` non avrebbero nulla da leggere o scrivere.
+- Il server MCP `foundry` non sarebbe in esecuzione, quindi ogni chiamata a uno strumento nel corpo
+  di ogni agente fallirebbe.
+- `plugins/foundry-core/schemas/*.schema.json` sarebbe assente, quindi il contratto di output che
+  ogni agente dichiara nominerebbe uno schema che nessuno può risolvere.
+- Nessun hook scatterebbe, quindi niente validerebbe un passaggio di consegne, limiterebbe il
+  ritorno di un subagente o bloccherebbe un comando distruttivo.
+
+L'intervallo di versione è un caret su `0.1.0`: una modifica del kernel che rompe i contratti
+richiede un incremento minore, e ogni verticale che fissa il vecchio intervallo continua a
+funzionare con il vecchio kernel.
+
+## Che cosa contiene ciascun plugin
+
+| Plugin | Agenti | Skill | Ambito |
+|---|---|---|---|
+| `foundry-core` | 4 | 7 | Orchestrazione, curatela della memoria, brokeraggio del contesto, scrittura di runbook — più il meccanismo su cui gira tutto il resto |
+| `foundry-research` | 5 | 5 | Ricerca di dominio, valutazione tecnologica, verifica delle evidenze, ingegneria della documentazione |
+| `foundry-ai` | 4 | 4 | Pipeline di retrieval misurate su set di query etichettate, suite di valutazione LLM, architettura di agenti e strumenti, prompt engineering |
+| `foundry-data` | 4 | 4 | Analisi esplorativa che arriva a un verdetto, baseline prima dei modelli, valutazione oltre l'accuratezza, MLOps dal notebook alla produzione |
+| `foundry-dev` | 19 | 17 | Architettura, modellazione del dominio, protocolli, integrazioni, identità, sicurezza, supply chain, UX e accessibilità, Angular, Spring Boot, database e migrazioni, versionamento delle API |
+| `foundry-quality` | 6 | 5 | Strategia di test, contract ed E2E testing, performance, observability, pratica SRE |
+| `foundry-ops` | 6 | 5 | GitHub Actions, container, Kubernetes, Terraform, target cloud e PaaS, release engineering |
+| `foundry-pmo` | 6 | 6 | Roadmap, backlog, requisiti, rischi, operazioni su GitHub, rendicontazione della delivery |
+| `foundry-economics` | 5 | 5 | Ingegneria dei costi di progetto, FinOps, controllo della spesa AI, business case, finanziamenti |
+| `foundry-legal` | 5 | 4 | Motore di compliance più cinque pacchetti di giurisdizione: `global-baseline`, `eu`, `it`, `north-america`, `uk-apac-latam` |
+| `foundry-growth` | 6 | 6 | Posizionamento e messaggi, lancio e pubblico, narrativa per i finanziatori e loro targeting, reputazione personale, ricerca di collaboratori — più un proprio gate consultivo sulla sostenibilità delle affermazioni |
+| `foundry-oss` | 4 | 5 | Governance, processo RFC, triage delle issue, versionamento semantico, advisory di sicurezza, comunicazione dei rilasci |
+
+<Aside type="note" title="Ogni plugin installato ha un costo">
+Le descrizioni di agenti e skill restano residenti perché Claude possa instradare le richieste. Il
+costo è modesto per plugin e reale nell'insieme — per questo il profilo `full` esiste per esplorare
+e gli altri quattro per lavorare.
+</Aside>
+
+## Dentro il kernel
+
+<FileTree>
+
+- plugins/foundry-core/
+  - .claude-plugin/
+    - plugin.json Manifest del kernel; `defaultEnabled: true`, `metadata.foundry.contracts: v1`
+  - lib/
+    - foundry.mjs Tutto il kernel: percorsi, config, memoria, indice, validatore, stima dei token, plumbing degli hook
+  - bin/
+    - foundry.mjs CLI — `init`, `doctor`, `memory`, `tokens`, `runbooks`, `validate`, `profile`
+  - mcp/
+    - server.mjs Server JSON-RPC su stdio che espone nove strumenti e tre tipi di risorsa
+  - .mcp.json Registra il server con il nome `foundry`
+  - hooks/
+    - hooks.json Dieci registrazioni di hook su otto eventi
+    - session-start.mjs
+    - prompt-context.mjs
+    - guard-bash.mjs
+    - guard-write.mjs
+    - validate-contract.mjs
+    - subagent-firewall.mjs
+    - stop-verify.mjs
+    - precompact-persist.mjs
+    - session-end.mjs
+  - schemas/ Dieci contratti JSON Schema 2020-12, versionati nel nome del file
+  - agents/ foundry-orchestrator, memory-curator, context-broker, runbook-author
+  - skills/ orchestrate, memory, token-budget, runbook, contracts, handoff, foundry-init
+  - workflows/ feature-delivery.js, audit-sweep.js, compliance-sweep.js
+  - playbooks/ feature-delivery.yaml, audit.yaml
+  - output-styles/ foundry-senior-engineer, foundry-pmo, foundry-analyst
+  - test/
+    - foundry.test.mjs Test unitari del kernel, `node --test`
+
+</FileTree>
+
+Ogni hook, la CLI e il server MCP importano lo stesso `lib/foundry.mjs`. È deliberato: la risposta
+che ottieni da `foundry memory search` a riga di comando e quella che un agente ottiene da
+`memory_search` vengono da un'unica implementazione, quindi non possono divergere.
+
+Il kernel ha **zero dipendenze a runtime**. Tutto è libreria standard di Node 20 — `node:fs`,
+`node:path`, `node:crypto`, `node:test`. In nessun punto dell'uso di Foundry esiste un passo
+`npm install`, incluso il validatore JSON Schema, che è un centinaio di righe e copre il
+sottoinsieme di parole chiave che i dieci contratti usano davvero.
+
+## Il repository
+
+<FileTree>
+
+- .claude-plugin/
+  - marketplace.json Le dodici voci di plugin; ogni `source` porta il percorso completo
+- plugins/ Una directory per plugin
+- profiles/ angular-spring-enterprise, oss-library, pa-italia, startup-mvp, full
+- scripts/
+  - validate-assets.mjs Controllo CI di ogni asset rispetto ad AUTHORING.md
+- site/ Questa documentazione, EN e IT
+- AUTHORING.md Contratto normativo degli asset; la CI lo applica
+
+</FileTree>
+
+`AUTHORING.md` è il pezzo che fa comportare dodici plugin come un unico sistema. Fissa il frontmatter
+di agenti e skill, la tabella di routing di modello ed effort, l'elenco dei livelli di memoria, la
+dichiarazione dei contratti di I/O che ogni agente deve riportare alla lettera e la regola per cui
+uno schema `vN` pubblicato non si modifica mai. `scripts/validate-assets.mjs` gira in CI, quindi un
+asset che lo ignora non viene integrato.
+
+## Che cosa Foundry scrive nel tuo progetto
+
+<FileTree>
+
+- .foundry/
+  - config.json Livello di enforcement, budget, percorsi protetti
+  - overrides.json Override dei gate, ciascuno con motivo e scadenza
+  - memory/
+    - INDEX.md L'unico file di memoria caricato di default
+    - facts/ Un file per fatto
+  - runbooks/ Procedure che qualcuno ripeterà
+  - blackboard/ Artefatti validati che gli agenti si passano, una directory per ondata
+  - scratch/ Locale alla sessione, in gitignore
+  - metrics/ events.jsonl, in gitignore
+- docs/adr/ Decisioni architetturali — fuori da `.foundry/`, perché sono pubbliche
+- .claude/settings.json Scritto da `foundry profile`, unito mai sostituito
+
+</FileTree>
+
+`foundry init` aggiunge `.foundry/scratch/` e `.foundry/metrics/` al `.gitignore`. Tutto il resto
+sotto `.foundry/` è pensato per essere committato: memoria, runbook e artefatti del blackboard sono
+conoscenza di progetto, e rivederne una modifica in una pull request è esattamente il punto.
+
+Da leggere dopo: [Memoria](/foundry/it/concepts/memory/) per i livelli e il ciclo di vita di un
+fatto, oppure [Contratti](/foundry/it/concepts/contracts/) per che cosa impongono gli schemi.

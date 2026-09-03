@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fedcal.github.io/foundry/schemas/compliance-check.v1.schema.json",
+  "title": "Compliance check",
+  "description": "One control assessed against one jurisdiction pack.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "compliance-check.v1"
+    },
+    "producedBy": {
+      "type": "string",
+      "description": "agent name that produced this artifact"
+    },
+    "controlId": {
+      "type": "string"
+    },
+    "jurisdiction": {
+      "type": "string",
+      "description": "e.g. global-baseline, eu, it, us, uk, apac, latam"
+    },
+    "instrument": {
+      "type": "string",
+      "description": "e.g. GDPR Art. 30, EU AI Act Art. 13, EN 301 549 9.1.4.3, ISO/IEC 27001 A.8.24"
+    },
+    "requirement": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "compliant",
+        "partial",
+        "non-compliant",
+        "not-applicable",
+        "undetermined"
+      ]
+    },
+    "rationale": {
+      "type": "string"
+    },
+    "gap": {
+      "type": "string"
+    },
+    "remediation": {
+      "type": "string"
+    },
+    "evidence": {
+      "type": "array",
+      "description": "Verifiable pointers: file:line, command output, URL, doc clause.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "ref"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "file",
+              "command",
+              "url",
+              "standard",
+              "measurement"
+            ]
+          },
+          "ref": {
+            "type": "string"
+          },
+          "excerpt": {
+            "type": "string",
+            "maxLength": 600
+          }
+        }
+      }
+    },
+    "assessedOn": {
+      "type": "string",
+      "format": "date"
+    },
+    "disclaimer": {
+      "const": "Automated technical assessment. Not legal advice."
+    }
+  },
+  "required": [
+    "schema",
+    "producedBy",
+    "controlId",
+    "jurisdiction",
+    "instrument",
+    "requirement",
+    "status",
+    "rationale",
+    "assessedOn",
+    "disclaimer"
+  ]
+}

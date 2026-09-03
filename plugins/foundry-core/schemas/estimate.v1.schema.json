@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fedcal.github.io/foundry/schemas/estimate.v1.schema.json",
+  "title": "Cost estimate",
+  "description": "Three-point estimate with assumptions made explicit.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "estimate.v1"
+    },
+    "producedBy": {
+      "type": "string",
+      "description": "agent name that produced this artifact"
+    },
+    "scope": {
+      "type": "string"
+    },
+    "currency": {
+      "type": "string",
+      "default": "EUR"
+    },
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "label",
+          "optimistic",
+          "likely",
+          "pessimistic"
+        ],
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "optimistic": {
+            "type": "number"
+          },
+          "likely": {
+            "type": "number"
+          },
+          "pessimistic": {
+            "type": "number"
+          },
+          "unit": {
+            "type": "string",
+            "enum": [
+              "hours",
+              "days",
+              "eur"
+            ]
+          }
+        }
+      }
+    },
+    "expected": {
+      "type": "number",
+      "description": "PERT: (o + 4m + p) / 6"
+    },
+    "confidenceInterval": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "p50": {
+          "type": "number"
+        },
+        "p80": {
+          "type": "number"
+        },
+        "p95": {
+          "type": "number"
+        }
+      }
+    },
+    "assumptions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      }
+    },
+    "excluded": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "schema",
+    "producedBy",
+    "scope",
+    "items",
+    "assumptions"
+  ]
+}

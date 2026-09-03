@@ -1,0 +1,49 @@
+# Foundry playbook — audit an existing codebase across several lenses.
+id: audit
+description: Scope, audit per lens, adversarially verify, then report only what survived.
+goal: "Find defects that are real, with evidence, and no false alarms."
+
+waves:
+  - id: scope
+    sequential:
+      - agent: context-broker
+        contract: handoff.v1
+    gate:
+      scope_is_bounded: true
+
+  - id: audit
+    inputs_from: scope
+    parallel:
+      - agent: appsec-reviewer
+        contract: review.v1
+      - agent: performance-engineer
+        contract: review.v1
+      - agent: accessibility-engineer
+        contract: review.v1
+      - agent: database-architect
+        contract: review.v1
+      - agent: test-strategist
+        contract: review.v1
+    gate:
+      every_finding_has_a_failure_scenario: true
+
+  - id: verify
+    description: Try to refute each finding. Default to refuted when ambiguous.
+    inputs_from: audit
+    parallel_per_finding:
+      lenses: [refutation, reachability]
+      agent: evidence-verifier
+      model: opus
+      effort: xhigh
+    gate:
+      only_unrefuted_findings_advance: true
+
+  - id: report
+    inputs_from: verify
+    sequential:
+      - agent: foundry-orchestrator
+        contract: handoff.v1
+
+notes:
+  - A finding without a concrete failure scenario is speculation and must not reach the user.
+  - Finding nothing is a valid result. Do not manufacture findings to justify the run.

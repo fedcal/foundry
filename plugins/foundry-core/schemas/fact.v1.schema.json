@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fedcal.github.io/foundry/schemas/fact.v1.schema.json",
+  "title": "Memory fact",
+  "description": "One atomic, durable project fact stored in tier T1.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "fact.v1"
+    },
+    "producedBy": {
+      "type": "string",
+      "description": "agent name that produced this artifact"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^fact-[0-9]{4,}$"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "decision",
+        "constraint",
+        "convention",
+        "domain",
+        "risk",
+        "metric",
+        "glossary"
+      ]
+    },
+    "scope": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 80
+    },
+    "body": {
+      "type": "string",
+      "maxLength": 900
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "confidence": {
+      "type": "string",
+      "enum": [
+        "high",
+        "medium",
+        "low"
+      ]
+    },
+    "source": {
+      "type": "string"
+    },
+    "created": {
+      "type": "string",
+      "format": "date"
+    },
+    "expires": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "supersedes": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "links": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "schema",
+    "producedBy",
+    "id",
+    "type",
+    "scope",
+    "title",
+    "body",
+    "confidence",
+    "source",
+    "created"
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "_comment": "Copyable review.v1 skeleton. additionalProperties is false throughout: remove every underscore-prefixed key before writing. Write to .foundry/blackboard/<wave>/appsec-reviewer.json",
+  "schema": "review.v1",
+  "producedBy": "appsec-reviewer",
+  "target": "<path or service reviewed>",
+  "dimension": "security",
+  "verdict": "pass | pass-with-comments | block",
+  "findings": [
+    {
+      "schema": "finding.v1",
+      "producedBy": "appsec-reviewer",
+      "id": "SEC-001",
+      "severity": "critical | high | medium | low | info",
+      "category": "injection | broken-access-control | ssrf | deserialisation | xxe | path-traversal | race-condition | token-misuse | cors | secret-handling | cross-cutting",
+      "title": "<=120 chars, states the defect, not the topic",
+      "summary": "<=600 chars. What the code does, and why that is wrong here.",
+      "failureScenario": "Actor + concrete input + precondition + wrong outcome. No exploit procedure. Required: a finding without one is speculation.",
+      "location": { "file": "path/to/File.java", "line": 64, "component": "orders-api" },
+      "standard": "OWASP ASVS 5.0 V<n> <Chapter>; CWE-<id>",
+      "remediation": "The change: file, API to switch to, config key. Not a goal.",
+      "effortHours": 4,
+      "confidence": "high | medium | low",
+      "verdict": "confirmed | plausible | refuted",
+      "evidence": [
+        { "kind": "file", "ref": "path/to/File.java:64", "excerpt": "<=600 chars" },
+        { "kind": "file", "ref": "path/to/EntryPoint.java:22", "excerpt": "reaching entry point" },
+        { "kind": "standard", "ref": "OWASP ASVS 5.0 V8 Authorization" },
+        { "kind": "command", "ref": "rg -n 'findByIdAndTenantId' src/", "excerpt": "no matches" }
+      ]
+    }
+  ],
+  "metrics": { "filesReviewed": 0, "sinksTraced": 0, "refuted": 0, "asvsLevel": 2 },
+  "summary": "<=900 chars. Confirmed findings, refutation rate, and what was not covered.",
+  "_evidenceKinds": ["file", "command", "url", "standard", "measurement"],
+  "_verdictRule": "block if any confirmed critical/high; pass-with-comments if only medium/low/info; pass only when findings is empty",
+  "_requiredOnFinding": ["schema", "producedBy", "id", "severity", "title", "summary", "failureScenario", "confidence"]
+}

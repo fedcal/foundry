@@ -1,0 +1,57 @@
+name: Bug report
+description: Something behaves differently from what the documentation says
+labels: ["type:bug", "status:needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A vulnerability? Do not file it here — see [SECURITY.md](../blob/{{DEFAULT_BRANCH}}/SECURITY.md).
+        A usage question? See [SUPPORT.md](../blob/{{DEFAULT_BRANCH}}/SUPPORT.md).
+  - type: input
+    id: version
+    attributes:
+      label: "{{PROJECT}} version"
+      description: "Output of `{{VERSION_CMD}}`"
+    validations: { required: true }
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: "{{LANG}} version, OS, architecture, install method"
+    validations: { required: true }
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: The smallest command or code that triggers it. We cannot fix what we cannot run.
+      render: shell
+    validations: { required: true }
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened
+      description: Paste the output verbatim, including the full error and stack trace.
+      render: shell
+    validations: { required: true }
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected, and why
+      description: Link the documentation line or the version where it worked.
+    validations: { required: true }
+  - type: input
+    id: last-working
+    attributes:
+      label: Last known working version
+      description: Leave blank if it never worked.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched open and closed issues
+          required: true
+        - label: I reproduced this on the latest supported version
+          required: false
+        - label: I agree to the Code of Conduct
+          required: true

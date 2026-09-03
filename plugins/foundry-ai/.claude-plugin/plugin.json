@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin.json",
+  "name": "foundry-ai",
+  "displayName": "Foundry AI",
+  "version": "0.1.0",
+  "description": "AI engineering: retrieval pipelines, LLM evaluation, prompt engineering and agent system design.",
+  "author": {
+    "name": "Federico Calò",
+    "url": "https://federicocalo.dev"
+  },
+  "homepage": "https://fedcal.github.io/foundry",
+  "repository": "https://github.com/fedcal/foundry",
+  "license": "Apache-2.0",
+  "keywords": [
+    "claude-code",
+    "foundry",
+    "rag",
+    "retrieval",
+    "evaluation",
+    "prompt-engineering",
+    "agents",
+    "llm"
+  ],
+  "metadata": {
+    "foundry.vertical": "ai",
+    "foundry.contracts": "v1"
+  },
+  "dependencies": [
+    {
+      "name": "foundry-core",
+      "version": "^0.1.0"
+    }
+  ],
+  "defaultEnabled": false
+}

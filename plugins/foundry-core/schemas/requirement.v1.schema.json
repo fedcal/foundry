@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fedcal.github.io/foundry/schemas/requirement.v1.schema.json",
+  "title": "Requirement",
+  "description": "A traceable requirement with acceptance criteria expressed as verifiable behaviour.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "requirement.v1"
+    },
+    "producedBy": {
+      "type": "string",
+      "description": "agent name that produced this artifact"
+    },
+    "id": {
+      "type": "string"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "functional",
+        "non-functional",
+        "constraint",
+        "regulatory"
+      ]
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 120
+    },
+    "userStory": {
+      "type": "string"
+    },
+    "acceptanceCriteria": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "given",
+          "when",
+          "then"
+        ],
+        "properties": {
+          "given": {
+            "type": "string"
+          },
+          "when": {
+            "type": "string"
+          },
+          "then": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "must",
+        "should",
+        "could",
+        "wont"
+      ]
+    },
+    "tracesTo": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "ADR numbers, test ids, compliance controls."
+    },
+    "owner": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "producedBy",
+    "id",
+    "kind",
+    "title",
+    "acceptanceCriteria",
+    "priority"
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://www.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "foundry-core",
+  "displayName": "Foundry Core",
+  "version": "0.1.0",
+  "description": "Kernel: governed memory, token economy, I/O contracts, orchestration, guard hooks and the Foundry MCP server. Required by every other Foundry plugin.",
+  "author": {
+    "name": "Federico Calò",
+    "url": "https://federicocalo.dev"
+  },
+  "homepage": "https://fedcal.github.io/foundry",
+  "repository": "https://github.com/fedcal/foundry",
+  "license": "Apache-2.0",
+  "keywords": [
+    "claude-code",
+    "foundry",
+    "memory",
+    "orchestration",
+    "contracts",
+    "hooks",
+    "mcp",
+    "tokens"
+  ],
+  "metadata": {
+    "foundry.vertical": "core",
+    "foundry.contracts": "v1"
+  },
+  "defaultEnabled": true
+}

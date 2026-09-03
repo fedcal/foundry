@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin.json",
+  "name": "foundry-data",
+  "displayName": "Foundry Data",
+  "version": "0.1.0",
+  "description": "Data science and classical ML: exploratory analysis, feature engineering and model training, evaluation, and production ML operations.",
+  "author": {
+    "name": "Federico Calò",
+    "url": "https://federicocalo.dev"
+  },
+  "homepage": "https://fedcal.github.io/foundry",
+  "repository": "https://github.com/fedcal/foundry",
+  "license": "Apache-2.0",
+  "keywords": [
+    "claude-code",
+    "foundry",
+    "data-science",
+    "machine-learning",
+    "eda",
+    "feature-engineering",
+    "model-evaluation",
+    "mlops"
+  ],
+  "metadata": {
+    "foundry.vertical": "data",
+    "foundry.contracts": "v1"
+  },
+  "dependencies": [
+    {
+      "name": "foundry-core",
+      "version": "^0.1.0"
+    }
+  ],
+  "defaultEnabled": false
+}

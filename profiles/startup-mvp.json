@@ -1,0 +1,49 @@
+{
+  "id": "startup-mvp",
+  "name": "Startup MVP",
+  "description": "Move fast without setting fire to the future: lighter gates, economics on, heavy process off.",
+  "plugins": [
+    "foundry-core",
+    "foundry-dev",
+    "foundry-economics",
+    "foundry-research"
+  ],
+  "foundryConfig": {
+    "enforcement": "warn",
+    "indexTokenBudget": 2500,
+    "verifyOnStop": true,
+    "protectedPaths": [
+      ".github/workflows/**",
+      "**/*.lock"
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(npm:*)",
+      "Bash(npx:*)",
+      "Bash(git:*)",
+      "Read(**)",
+      "Glob(**)",
+      "Grep(**)",
+      "Write(**)",
+      "Edit(**)"
+    ],
+    "ask": [
+      "Bash(git push:*)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)"
+    ],
+    "defaultMode": "acceptEdits"
+  },
+  "recommendedMcpServers": [
+    "foundry",
+    "filesystem",
+    "git"
+  ],
+  "notes": [
+    "Enforcement is 'warn', not 'off': destructive Bash commands prompt instead of being denied, and a write containing a secret is still denied outright at every level except 'off'.",
+    "The completion-verification gate and the subagent context firewall are governed by their own settings, not by the enforcement level, so they stay on here \u2014 shipping something believed to work but never run is the most expensive startup habit."
+  ]
+}

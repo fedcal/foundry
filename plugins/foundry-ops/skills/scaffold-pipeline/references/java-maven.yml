@@ -1,0 +1,157 @@
+# Java / Maven CI.
+# Resolve every <PLACEHOLDER> before use:
+#   SHA        -> gh api repos/<OWNER>/<REPO>/commits/<TAG> --jq '.sha'
+#   JAVA-VER   -> mvn help:evaluate -Dexpression=maven.compiler.release -q -DforceStdout
+#   DISTRO     -> the JDK distribution your organisation standardises on
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [<DEFAULT-BRANCH>]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # -B batch mode (no ANSI, no prompts), -ntp no transfer progress: readable logs.
+  MAVEN_ARGS: "-B -ntp -Dstyle.color=never"
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    outputs:
+      version: ${{ steps.ver.outputs.value }}
+    steps:
+      - uses: actions/checkout@<SHA> # <TAG>
+        with: { persist-credentials: false }
+
+      - uses: actions/setup-java@<SHA> # <TAG>
+        with:
+          java-version: "<JAVA-VER>"
+          distribution: "<DISTRO>"
+          cache: maven          # caches ~/.m2/repository keyed on the POMs
+
+      # Fail fast on a build that cannot resolve reproducibly. `verify` runs
+      # unit + integration tests and the JaCoCo report in one pass, so the
+      # artefact and the coverage number come from the SAME build.
+      - name: Build, test, verify
+        run: mvn $MAVEN_ARGS verify
+
+      - id: ver
+        run: |
+          V=$(mvn $MAVEN_ARGS help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "value=$V" >> "$GITHUB_OUTPUT"
+
+      # Coverage gate. Prefer enforcing it in the POM with jacoco:check so that a
+      # local `mvn verify` fails identically; this step is the CI-side backstop.
+      - name: Coverage gate
+        run: |
+          set -euo pipefail
+          REPORT=target/site/jacoco/jacoco.csv
+          test -f "$REPORT" || { echo "no JaCoCo report - is the plugin bound to verify?"; exit 1; }
+          PCT=$(awk -F, 'NR>1 {miss+=$4; cov+=$5} END {printf "%.1f", (cov*100)/(cov+miss)}' "$REPORT")
+          echo "instruction coverage: $PCT% (min <MIN-COVERAGE>%)"
+          awk -v p="$PCT" -v m="<MIN-COVERAGE>" 'BEGIN { exit (p+0 >= m+0) ? 0 : 1 }'
+
+      - uses: actions/upload-artifact@<SHA> # <TAG>
+        with:
+          name: jar
+          path: target/*.jar
+          retention-days: 7
+
+      - uses: actions/upload-artifact@<SHA> # <TAG>
+        if: always()
+        with:
+          name: test-reports
+          path: |
+            target/surefire-reports/
+            target/failsafe-reports/
+            target/site/jacoco/
+          retention-days: 7
+
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@<SHA> # <TAG>
+        with:
+          fetch-depth: 0        # static analysis tools want history for blame/new-code
+          persist-credentials: false
+      - uses: actions/setup-java@<SHA> # <TAG>
+        with:
+          java-version: "<JAVA-VER>"
+          distribution: "<DISTRO>"
+          cache: maven
+      # Bind Checkstyle/SpotBugs/PMD in the POM and fail the build there, so the
+      # same command works locally. -DskipTests: the test job already ran them.
+      - run: mvn $MAVEN_ARGS -DskipTests checkstyle:check spotbugs:check
+
+  security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@<SHA> # <TAG>
+        with: { persist-credentials: false }
+      - uses: actions/setup-java@<SHA> # <TAG>
+        with:
+          java-version: "<JAVA-VER>"
+          distribution: "<DISTRO>"
+          cache: maven
+
+      # OWASP Dependency-Check needs its own long-lived data cache; without it
+      # every run downloads the full vulnerability database and takes many minutes.
+      - uses: actions/cache@<SHA> # <TAG>
+        with:
+          path: ~/.m2/repository/org/owasp/dependency-check-data
+          key: depcheck-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: depcheck-${{ runner.os }}-
+
+      # failBuildOnCVSS and the suppression file are configured in the POM so the
+      # policy is reviewable in the repository rather than hidden in workflow YAML.
+      # Every suppression entry carries a reason and an expiry date.
+      - run: mvn $MAVEN_ARGS -DskipTests org.owasp:dependency-check-maven:check
+
+      - uses: actions/upload-artifact@<SHA> # <TAG>
+        if: always()
+        with: { name: dependency-check, path: target/dependency-check-report.*, retention-days: 30 }
+
+  sbom:
+    needs: build-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@<SHA> # <TAG>
+        with: { persist-credentials: false }
+      - uses: actions/setup-java@<SHA> # <TAG>
+        with:
+          java-version: "<JAVA-VER>"
+          distribution: "<DISTRO>"
+          cache: maven
+      # CycloneDX Maven plugin, version pinned in the POM's pluginManagement.
+      - run: mvn $MAVEN_ARGS -DskipTests cyclonedx:makeAggregateBom
+      - uses: actions/upload-artifact@<SHA> # <TAG>
+        with: { name: sbom, path: target/bom.json, retention-days: 90 }
+
+  ci-complete:
+    if: always()
+    needs: [build-test, quality, security, sbom]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          set -euo pipefail
+          echo "$RESULTS"
+          echo "$RESULTS" | grep -q '"result": *"failure"'   && exit 1
+          echo "$RESULTS" | grep -q '"result": *"cancelled"' && exit 1
+          exit 0

@@ -1,0 +1,104 @@
+# Blue-green with plain Kubernetes objects: two Deployments, one production
+# Service whose selector is the switch, and a preview Service for verification.
+#
+# What this buys: an instant application rollback, as one object change.
+# What it does NOT buy: a data rollback. The database is shared. A migration
+# green applied is still applied after you switch back to blue - so expand/
+# contract is still mandatory and blue-green buys less than it appears to.
+#
+# Cost: double compute for the overlap window, double connection-pool pressure
+# on shared databases. Size the database for two copies or find out the hard way.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: <NAME>-blue
+  namespace: <NS>
+  labels: { app: <NAME>, slot: blue }
+spec:
+  replicas: <N>
+  selector:
+    matchLabels: { app: <NAME>, slot: blue }
+  template:
+    metadata:
+      labels: { app: <NAME>, slot: blue, version: <BLUE-VERSION> }
+    spec:
+      terminationGracePeriodSeconds: <SECONDS>
+      containers:
+        - name: <CONTAINER>
+          image: <REGISTRY>/<IMAGE>@sha256:<BLUE-DIGEST>
+          # probes, resources and securityContext: identical to rolling-update.yaml
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: <NAME>-green
+  namespace: <NS>
+  labels: { app: <NAME>, slot: green }
+spec:
+  replicas: <N>
+  selector:
+    matchLabels: { app: <NAME>, slot: green }
+  template:
+    metadata:
+      labels: { app: <NAME>, slot: green, version: <GREEN-VERSION> }
+    spec:
+      terminationGracePeriodSeconds: <SECONDS>
+      containers:
+        - name: <CONTAINER>
+          image: <REGISTRY>/<IMAGE>@sha256:<GREEN-DIGEST>
+---
+# PRODUCTION Service. The `slot` selector is the switch. Keep it to a single
+# object change: a switch spanning Service + ingress + DNS can fail halfway and
+# leave traffic split unintentionally.
+apiVersion: v1
+kind: Service
+metadata:
+  name: <NAME>
+  namespace: <NS>
+spec:
+  selector:
+    app: <NAME>
+    slot: blue            # <-- the switch
+  ports:
+    - { port: 80, targetPort: 8080 }
+---
+# PREVIEW Service: verify green with real smoke tests before any user reaches it.
+apiVersion: v1
+kind: Service
+metadata:
+  name: <NAME>-preview
+  namespace: <NS>
+spec:
+  selector:
+    app: <NAME>
+    slot: green
+  ports:
+    - { port: 80, targetPort: 8080 }
+
+# --- Operating procedure -----------------------------------------------------
+#
+# 1. Deploy green and wait for it to be fully ready:
+#      kubectl -n <NS> rollout status deploy/<NAME>-green --timeout=<SECONDS>s
+#
+# 2. Pre-warm it. Green has cold caches, cold JIT and empty connection pools; at
+#    the instant of the switch it takes 100% of traffic. Drive synthetic load
+#    through <NAME>-preview until latency settles.
+#
+# 3. Verify through the preview Service - real user paths, not just /health.
+#
+# 4. SWITCH (single object change):
+#      kubectl -n <NS> patch svc <NAME> -p '{"spec":{"selector":{"app":"<NAME>","slot":"green"}}}'
+#
+# 5. Watch for <OBSERVATION-WINDOW>. Existing WebSocket / gRPC / keep-alive
+#    connections do NOT follow the selector change - they stay on blue until they
+#    close. "Instant" applies to new connections only.
+#
+# 6. ROLLBACK - the same operation, reversed. Seconds:
+#      kubectl -n <NS> patch svc <NAME> -p '{"spec":{"selector":{"app":"<NAME>","slot":"blue"}}}'
+#
+#    This does NOT undo: migrations green applied, ConfigMap/Secret changes,
+#    consumed messages, sent emails, or CDN/cache content populated by green.
+#
+# 7. Keep blue running for <RETENTION-WINDOW> after the switch. Scaling it down
+#    immediately to save money removes the thing you would roll back to.

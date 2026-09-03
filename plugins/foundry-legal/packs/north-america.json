@@ -1,0 +1,567 @@
+{
+  "pack": {
+    "id": "north-america",
+    "name": "United States and Canada",
+    "scope": "United States federal and state instruments that reach a software product: the CCPA as amended by the CPRA together with the other state comprehensive privacy laws, sectoral regimes (HIPAA, GLBA, COPPA), SOX where the issuer is US-listed, biometric statutes, breach notification, ADA and Section 508 accessibility, FTC Act Section 5 as applied to AI and data claims, and emerging state AI and automated-decision rules. Canada: PIPEDA and provincial equivalents, plus federal and provincial accessibility legislation. This pack deliberately excludes: state law that only regulates a specific industry not named here, export controls and sanctions, employment law, securities disclosure beyond internal control over financial reporting, tax, and anything requiring a determination of whether a revenue or volume threshold is met.",
+    "lastReviewed": null,
+    "sources": [
+      {
+        "instrument": "CCPA/CPRA — California Attorney General",
+        "url": "https://oag.ca.gov/privacy/ccpa",
+        "checkedOn": "2026-08-27"
+      },
+      {
+        "instrument": "HHS — HIPAA",
+        "url": "https://www.hhs.gov/hipaa/index.html",
+        "note": "Host blocks automated requests (HTTP 403 on check); URL is the canonical entry point and was not machine-verified."
+      },
+      {
+        "instrument": "US Access Board — Section 508",
+        "url": "https://www.access-board.gov/ict/",
+        "checkedOn": "2026-08-27"
+      },
+      {
+        "instrument": "Office of the Privacy Commissioner of Canada — PIPEDA",
+        "url": "https://www.priv.gc.ca/en/privacy-topics/privacy-laws-in-canada/",
+        "checkedOn": "2026-08-27"
+      }
+    ],
+    "verificationRequired": "Automated technical assessment. Not legal advice. US privacy law is a moving patchwork: new state statutes take effect on a rolling basis, applicability thresholds differ by state and are frequently amended, and agency rulemaking changes obligations without changing the statute. lastReviewed is null: no citation here has been confirmed against the US Code, the CFR, state codes or the Canadian statutes. Controls flagged unverifiedCitation carry a citation not checked at section level, and no threshold, deadline or penalty figure is asserted anywhere in this pack. Confirm every control against the current official text and have qualified US and Canadian counsel confirm anything consequential."
+  },
+  "controls": [
+    {
+      "controlId": "na-ccpa-notice-at-collection",
+      "theme": "privacy",
+      "instrument": "California Consumer Privacy Act as amended by the CPRA (Cal. Civ. Code § 1798.100 et seq.)",
+      "requirement": "Consumers receive notice at or before the point of collection of the categories of personal information collected, the purposes of use, whether it is sold or shared, and the retention period or the criteria used to determine it.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal"
+        ],
+        "anyOf": [
+          "markets.us-ca",
+          "markets.us"
+        ]
+      },
+      "evidenceHints": [
+        "doc: the notice at collection, distinct from the full privacy policy",
+        "code: the collection points themselves — forms, SDKs, tags — checked against the notice",
+        "doc: a stated retention period per category, which is the clause most often missing"
+      ],
+      "severity": "high"
+    },
+    {
+      "controlId": "na-ccpa-consumer-rights",
+      "theme": "privacy",
+      "instrument": "CCPA/CPRA — consumer rights to know, delete, correct, and to limit use of sensitive personal information",
+      "requirement": "Verifiable consumer requests to know, delete, correct, and to limit the use and disclosure of sensitive personal information are honoured through at least the designated methods, with a verification process and a defined response window.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal"
+        ],
+        "anyOf": [
+          "markets.us-ca",
+          "markets.us"
+        ]
+      },
+      "evidenceHints": [
+        "code: the request intake endpoints and the identity verification logic",
+        "code: whether deletion is forwarded to service providers and third parties",
+        "cmd: run each request type end to end on a test account and list the systems missed"
+      ],
+      "severity": "high"
+    },
+    {
+      "controlId": "na-ccpa-opt-out-signals",
+      "theme": "privacy",
+      "instrument": "CCPA/CPRA — opt-out of sale and sharing, and opt-out preference signals",
+      "requirement": "Where personal information is sold or shared for cross-context behavioural advertising, a clear opt-out mechanism is provided and browser-level opt-out preference signals are honoured as a valid request without requiring further action from the consumer.",
+      "appliesWhen": {
+        "anyOf": [
+          "product.ad-tech",
+          "markets.us-ca"
+        ],
+        "allOf": [
+          "data.personal"
+        ]
+      },
+      "evidenceHints": [
+        "code: handling of the Global Privacy Control signal in the web application",
+        "code: the link or control offered to consumers, and whether it stops the actual tag firing",
+        "config: advertising and analytics integrations that constitute sharing"
+      ],
+      "severity": "critical"
+    },
+    {
+      "controlId": "na-ccpa-service-provider-contracts",
+      "theme": "governance",
+      "instrument": "CCPA/CPRA — contracts with service providers, contractors and third parties",
+      "requirement": "Disclosures of personal information to service providers, contractors and third parties are governed by contracts containing the terms the statute requires, including purpose limitation, prohibition on retaining or using the information outside the business purpose, and rights of oversight.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal"
+        ],
+        "anyOf": [
+          "markets.us-ca",
+          "markets.us"
+        ]
+      },
+      "evidenceHints": [
+        "config: the deployed vendor list, which is the ground truth for who receives data",
+        "doc: executed data protection addenda with the required CCPA terms",
+        "ask: which vendors are service providers and which are third parties — the distinction changes the obligations"
+      ],
+      "severity": "high"
+    },
+    {
+      "controlId": "na-state-privacy-patchwork",
+      "theme": "privacy",
+      "instrument": "US state comprehensive privacy laws (Virginia, Colorado, Connecticut, Utah, Texas, Oregon and others)",
+      "requirement": "Additional state statutes impose overlapping but non-identical duties: privacy notices, consumer rights including appeal of a denied request, opt-in consent for sensitive data in several states, data protection assessments for higher-risk processing, and universal opt-out mechanism recognition in several states.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal",
+          "markets.us"
+        ]
+      },
+      "evidenceHints": [
+        "doc: which state laws the organisation has determined apply, and on what threshold analysis",
+        "code: whether the rights implementation includes an appeal path, required by several states",
+        "doc: data protection assessments for targeted advertising, sale, profiling and sensitive data"
+      ],
+      "severity": "high",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "na-state-health-data",
+      "theme": "privacy",
+      "instrument": "State consumer health data laws (for example Washington My Health My Data Act)",
+      "requirement": "Consumer health data outside HIPAA is subject to separate state regimes requiring specific consent for collection and separate authorisation for sale, a dedicated privacy notice, and rights of access and deletion. Geolocation near health facilities may itself be regulated.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.us"
+        ],
+        "anyOf": [
+          "data.health",
+          "data.location"
+        ]
+      },
+      "evidenceHints": [
+        "code: any inference or field that could be read as health data, including wellness and fitness signals",
+        "doc: a separate consumer health data privacy notice where required",
+        "code: precise geolocation collection and how it is scoped"
+      ],
+      "severity": "high",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "na-biometric-statutes",
+      "theme": "privacy",
+      "instrument": "State biometric privacy statutes (for example the Illinois Biometric Information Privacy Act and the Texas biometric statute)",
+      "requirement": "Collection of biometric identifiers requires prior written notice and consent, a publicly available retention and destruction schedule, and prohibits sale or profit from biometric data. Illinois provides a private right of action, which makes this the highest litigation-exposure control in this pack.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.us"
+        ],
+        "anyOf": [
+          "data.biometric",
+          "product.biometric-identification"
+        ]
+      },
+      "evidenceHints": [
+        "code: face, fingerprint, voiceprint or gait processing anywhere in the product, including for liveness or fraud checks",
+        "doc: the published retention and destruction schedule",
+        "code: whether templates are deleted on the schedule, verified against the data store"
+      ],
+      "severity": "critical",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "na-coppa-children",
+      "theme": "privacy",
+      "instrument": "Children's Online Privacy Protection Act and its implementing rule",
+      "requirement": "Operators of services directed to children under 13, or with actual knowledge of collecting personal information from them, must give direct notice to parents, obtain verifiable parental consent before collection, allow parents to review and delete, and limit retention to what is necessary.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.us"
+        ],
+        "anyOf": [
+          "data.children",
+          "users.minors"
+        ]
+      },
+      "evidenceHints": [
+        "code: the age screening mechanism and what happens when a user self-declares as under 13",
+        "code: third-party SDKs in a child-directed surface, which are the usual COPPA failure",
+        "doc: the verifiable parental consent method used"
+      ],
+      "severity": "critical"
+    },
+    {
+      "controlId": "na-hipaa-security-rule",
+      "theme": "security",
+      "instrument": "HIPAA Security Rule (45 CFR Part 164, Subpart C) — administrative, physical and technical safeguards",
+      "requirement": "Covered entities and business associates implement administrative, physical and technical safeguards for electronic protected health information, including a risk analysis, access control, audit controls, integrity controls and transmission security.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.us"
+        ],
+        "anyOf": [
+          "data.health",
+          "sector.health"
+        ]
+      },
+      "evidenceHints": [
+        "doc: the security risk analysis, its date and whether it covers the current architecture",
+        "code: audit controls recording access to ePHI at record level",
+        "config: encryption of ePHI in transit and at rest, and the documented decision where it is not applied"
+      ],
+      "severity": "critical"
+    },
+    {
+      "controlId": "na-hipaa-privacy-baa",
+      "theme": "governance",
+      "instrument": "HIPAA Privacy Rule (45 CFR Part 164, Subpart E) and business associate agreements",
+      "requirement": "Uses and disclosures of protected health information are limited to those permitted, the minimum necessary standard applies, individuals have rights of access and amendment, and every business associate and subcontractor handling PHI is covered by a business associate agreement.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.us"
+        ],
+        "anyOf": [
+          "data.health",
+          "sector.health"
+        ]
+      },
+      "evidenceHints": [
+        "doc: executed BAAs with every vendor that could touch PHI, including infrastructure and support tools",
+        "code: whether internal access to PHI is scoped to the minimum necessary or is role-wide",
+        "code: the individual access path and its response time"
+      ],
+      "severity": "critical"
+    },
+    {
+      "controlId": "na-hipaa-breach-notification",
+      "theme": "resilience",
+      "instrument": "HIPAA Breach Notification Rule (45 CFR Part 164, Subpart D)",
+      "requirement": "Following discovery of a breach of unsecured protected health information, notification is provided to affected individuals, to the Secretary, and in larger breaches to the media, within the periods the rule prescribes. Business associates notify covered entities.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.us"
+        ],
+        "anyOf": [
+          "data.health",
+          "sector.health"
+        ]
+      },
+      "evidenceHints": [
+        "doc: a breach procedure distinguishing the HIPAA clock from state breach clocks",
+        "doc: the risk assessment methodology used to determine whether an incident is a breach",
+        "ask: who decides, and can they be reached at 2am"
+      ],
+      "severity": "critical",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "na-glba-safeguards",
+      "theme": "security",
+      "instrument": "Gramm-Leach-Bliley Act — Safeguards Rule",
+      "requirement": "Financial institutions maintain a written information security programme with a qualified individual responsible for it, a written risk assessment, access controls, encryption of customer information in transit and at rest, MFA, secure development practices, monitoring, a written incident response plan and periodic reporting to the governing body.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.us"
+        ],
+        "anyOf": [
+          "sector.finance",
+          "data.financial",
+          "product.payments"
+        ]
+      },
+      "evidenceHints": [
+        "doc: the written information security programme and the named qualified individual",
+        "config: MFA coverage on all systems holding customer information",
+        "doc: the written risk assessment, with a date"
+      ],
+      "severity": "critical",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "na-sox-itgc",
+      "theme": "governance",
+      "instrument": "Sarbanes-Oxley Act Sections 302 and 404 — internal control over financial reporting and IT general controls",
+      "requirement": "Systems that produce or affect financial reporting data are subject to IT general controls: change management with segregation of duties, logical access provisioning and periodic review, and job scheduling and backup controls, all evidenced in a form an auditor can test.",
+      "appliesWhen": {
+        "allOf": [
+          "org.us-public-company"
+        ]
+      },
+      "evidenceHints": [
+        "config: whether a developer can deploy to a financially relevant production system without an independent approval",
+        "cmd: evidence trail for a sample change from ticket to approval to deployment",
+        "doc: quarterly access reviews for financially relevant systems"
+      ],
+      "severity": "high"
+    },
+    {
+      "controlId": "na-sox-records-retention",
+      "theme": "records",
+      "instrument": "Sarbanes-Oxley Act — records retention and integrity",
+      "requirement": "Records relevant to financial reporting and audit are retained for the required period and protected against alteration or destruction, including electronic records and communications held in engineering-managed systems.",
+      "appliesWhen": {
+        "allOf": [
+          "org.us-public-company"
+        ]
+      },
+      "evidenceHints": [
+        "config: retention and immutability settings on the relevant data stores and log archives",
+        "code: any routine that hard-deletes or rewrites financially relevant records",
+        "doc: the records retention schedule and who enforces it"
+      ],
+      "severity": "high",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "na-state-breach-notification",
+      "theme": "resilience",
+      "instrument": "State data breach notification statutes (all fifty states, plus territories)",
+      "requirement": "Unauthorised acquisition of defined categories of personal information triggers notification to affected residents and, in many states, to the attorney general or consumer reporting agencies, within periods and on triggers that differ by state.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal",
+          "markets.us"
+        ]
+      },
+      "evidenceHints": [
+        "doc: an incident procedure that can determine residency of affected individuals",
+        "code: whether the data model records enough to identify which residents are affected",
+        "doc: the encryption safe-harbour position, and whether the encryption actually qualifies"
+      ],
+      "severity": "critical",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "na-ftc-section5-ai-claims",
+      "theme": "ai",
+      "instrument": "FTC Act Section 5 — unfair or deceptive acts or practices, as applied to AI and automated systems",
+      "requirement": "Claims about what an AI system does, how accurate it is, whether a human reviews it, and how customer data is used to train models must be truthful and substantiated at the time they are made. Undisclosed use of customer or user data for model training is a recurring enforcement theme.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.us"
+        ],
+        "anyOf": [
+          "product.ai-system",
+          "product.genai-feature"
+        ]
+      },
+      "evidenceHints": [
+        "doc: marketing copy, landing pages and sales decks describing the AI capability",
+        "code: what the system actually does, compared line by line against those claims",
+        "doc: whether customer data is used for training, and where that is disclosed"
+      ],
+      "severity": "critical"
+    },
+    {
+      "controlId": "na-ftc-section5-data-claims",
+      "theme": "privacy",
+      "instrument": "FTC Act Section 5 — privacy and security representations",
+      "requirement": "Statements in privacy policies, security pages, trust centres and certification badges are enforceable representations. A security page claiming a control that is not implemented is itself the violation, independently of any breach.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.us"
+        ]
+      },
+      "evidenceHints": [
+        "doc: the public security page and trust centre, claim by claim",
+        "config: verify each claimed control actually exists (encryption, MFA, pen testing cadence, certifications)",
+        "doc: certification badges displayed, and whether the certificate is current and in scope"
+      ],
+      "severity": "high"
+    },
+    {
+      "controlId": "na-ada-title-iii-web",
+      "theme": "accessibility",
+      "instrument": "Americans with Disabilities Act, Titles II and III, as applied to web and mobile services",
+      "requirement": "Places of public accommodation and public entities must not discriminate on the basis of disability in the goods and services they offer, which in practice has been applied to websites and mobile applications. Title II has been the subject of a Department of Justice rule adopting a WCAG conformance level for state and local government web content and mobile apps, with compliance dates that must be confirmed.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.us"
+        ],
+        "anyOf": [
+          "product.web-ui",
+          "product.mobile-app"
+        ]
+      },
+      "evidenceHints": [
+        "cmd: an audit result stating the conformance level actually achieved, with the date",
+        "doc: whether the entity is a Title II public entity or a Title III public accommodation",
+        "doc: any accessibility remediation plan and its milestones"
+      ],
+      "severity": "high",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "na-section-508",
+      "theme": "accessibility",
+      "instrument": "Section 508 of the Rehabilitation Act and the Revised 508 Standards (36 CFR Part 1194)",
+      "requirement": "ICT developed, procured, maintained or used by federal agencies must conform to the Revised 508 Standards, which incorporate WCAG success criteria by reference and add requirements for software, hardware, documentation and support. Suppliers are normally asked for an accessibility conformance report.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.us"
+        ],
+        "anyOf": [
+          "org.sells-to-us-federal",
+          "users.public-sector"
+        ]
+      },
+      "evidenceHints": [
+        "doc: an Accessibility Conformance Report (commonly a VPAT) with honest 'partially supports' entries",
+        "code: non-web software surfaces and generated documents, which the report must cover",
+        "doc: accessibility of product documentation and of the support channel"
+      ],
+      "severity": "high",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "na-nyc-ll144-aedt",
+      "theme": "ai",
+      "instrument": "New York City Local Law 144 — automated employment decision tools",
+      "requirement": "Automated employment decision tools used to screen candidates or employees for hire or promotion in the city require an independent bias audit before use, publication of a summary of the results, and notice to candidates about the tool and the characteristics it assesses.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.us"
+        ],
+        "anyOf": [
+          "product.automated-employment-decisions"
+        ]
+      },
+      "evidenceHints": [
+        "doc: the independent bias audit and its publication date",
+        "code: where the tool sits in the hiring funnel and whether it substantially assists a decision",
+        "doc: the candidate notice and its timing relative to use"
+      ],
+      "severity": "high",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "na-state-ai-discrimination",
+      "theme": "ai",
+      "instrument": "State legislation on algorithmic discrimination in consequential decisions (for example the Colorado AI Act)",
+      "requirement": "Developers and deployers of systems that make or substantially factor into consequential decisions about people face duties of care to avoid algorithmic discrimination, including impact assessments, disclosure to affected individuals and notification to the attorney general in defined circumstances. Effective dates have been amended more than once and must be confirmed.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.us"
+        ],
+        "anyOf": [
+          "product.ai-decisions-about-people",
+          "product.automated-employment-decisions",
+          "product.credit-scoring"
+        ]
+      },
+      "evidenceHints": [
+        "doc: an impact assessment covering the decision domain and the groups affected",
+        "code: the disclosure shown to the person subject to the decision",
+        "doc: which states the organisation has determined are in scope and on what basis"
+      ],
+      "severity": "high",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "na-marketing-communications",
+      "theme": "consumer",
+      "instrument": "CAN-SPAM Act and the Telephone Consumer Protection Act",
+      "requirement": "Commercial email must identify itself, include a valid physical postal address and a functioning opt-out honoured within the statutory period; calls and text messages to consumers are separately regulated and generally require prior express consent, with a documented record of that consent.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.us"
+        ],
+        "anyOf": [
+          "product.marketing-email",
+          "users.consumer"
+        ]
+      },
+      "evidenceHints": [
+        "code: every outbound send path, and whether each consults the suppression list",
+        "code: the unsubscribe handler and how long it takes to take effect",
+        "doc: the record of consent for SMS or voice, per recipient"
+      ],
+      "severity": "medium",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "ca-pipeda-principles",
+      "theme": "privacy",
+      "instrument": "Canada — Personal Information Protection and Electronic Documents Act (PIPEDA), Schedule 1 fair information principles",
+      "requirement": "Organisations identify purposes, obtain meaningful consent appropriate to the sensitivity of the information, limit collection, use, disclosure and retention, keep information accurate, apply safeguards, be open about practices, provide individual access, and designate someone accountable for compliance.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal",
+          "markets.canada"
+        ]
+      },
+      "evidenceHints": [
+        "doc: the named accountable individual for privacy",
+        "code: whether consent is meaningful given the sensitivity — bundled consent fails here as it does under the GDPR",
+        "code: the individual access path and its response time"
+      ],
+      "severity": "high"
+    },
+    {
+      "controlId": "ca-pipeda-breach",
+      "theme": "resilience",
+      "instrument": "Canada — PIPEDA breach of security safeguards: reporting, notification and record-keeping",
+      "requirement": "Breaches presenting a real risk of significant harm are reported to the Privacy Commissioner and notified to affected individuals as soon as feasible, and a record of every breach of security safeguards is kept regardless of whether it met the harm threshold.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal",
+          "markets.canada"
+        ]
+      },
+      "evidenceHints": [
+        "doc: the breach register, including non-notifiable breaches",
+        "doc: the real-risk-of-significant-harm assessment methodology",
+        "doc: the retention period applied to the breach register"
+      ],
+      "severity": "high"
+    },
+    {
+      "controlId": "ca-quebec-law25",
+      "theme": "privacy",
+      "instrument": "Quebec — Act to modernize legislative provisions as regards the protection of personal information (Law 25)",
+      "requirement": "Quebec imposes additional duties including a designated person in charge of protection of personal information, privacy impact assessments for information system projects and for transfers outside Quebec, confidentiality by default, and rights concerning automated decisions and portability.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal",
+          "markets.canada"
+        ]
+      },
+      "evidenceHints": [
+        "doc: the privacy impact assessment for the system, and for any transfer outside Quebec",
+        "code: default privacy settings on new accounts, which must be the most protective",
+        "code: the notice and explanation given where a decision is made exclusively by automated processing"
+      ],
+      "severity": "high",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "ca-accessibility",
+      "theme": "accessibility",
+      "instrument": "Canada — Accessible Canada Act and provincial accessibility legislation (for example the Accessibility for Ontarians with Disabilities Act)",
+      "requirement": "Federally regulated entities publish accessibility plans, feedback processes and progress reports; provincial regimes impose web accessibility conformance obligations on covered organisations, generally by reference to a WCAG level.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.canada"
+        ],
+        "anyOf": [
+          "product.web-ui",
+          "product.mobile-app"
+        ]
+      },
+      "evidenceHints": [
+        "doc: the published accessibility plan and feedback process, where the entity is federally regulated",
+        "cmd: audit result against the WCAG level referenced by the applicable provincial regime",
+        "doc: whether the organisation meets the employee-count or sector trigger in the applicable province"
+      ],
+      "severity": "medium",
+      "unverifiedCitation": true
+    }
+  ]
+}

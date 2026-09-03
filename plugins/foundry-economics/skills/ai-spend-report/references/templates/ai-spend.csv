@@ -1,0 +1,51 @@
+PARAMETERS,item,,value,,,,notes
+,window start,,<<TBC: YYYY-MM-DD>>,,,,from --since
+,window end,,<<TBC: YYYY-MM-DD>>,,,,from --until
+,sessions observed,,<<TBC: measured>>,,,,distinct session_end.session — a LOWER BOUND
+,pricing.json found,,<<TBC: yes | no>>,,,,if no every money cell stays <<UNPRICED>>
+,pricing asOf,,<<TBC>>,,,,warn if more than 90 days before today
+,currency,,<<TBC>>,,,,must match every other figure in the analysis
+,model id used for pricing,,<<TBC>>,,,,must match the id in the usage export exactly
+,input price per MTok,,<<TBC: from pricing.json>>,,,,NEVER from memory — row 9
+,output price per MTok,,<<TBC: from pricing.json>>,,,,NEVER from memory — row 10
+,cache write per MTok,,<<TBC: from pricing.json>>,,,,row 11
+,cache read per MTok,,<<TBC: from pricing.json>>,,,,row 12
+,,,,,,,
+PER-AGENT,agent,runs,total_return_tokens,p50_tokens,p80_tokens,cost_as_output,notes
+,<<TBC: agent name>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,"=IF($D$10="""","""",D15*$D$10/1000000)",p80 is the number to budget with
+,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,"=IF($D$10="""","""",D16*$D$10/1000000)",
+,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,"=IF($D$10="""","""",D17*$D$10/1000000)",
+,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,"=IF($D$10="""","""",D18*$D$10/1000000)",
+,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,"=IF($D$10="""","""",D19*$D$10/1000000)",
+,TOTAL,"=SUM(C15:C19)","=SUM(D15:D19)",,,"=SUM(G15:G19)",subagent returns ONLY — not total session spend
+,,,,,,,
+DERIVED,metric,,value,,,,formula
+,return tokens per session,,"=IF($D$4=0,"""",D20/$D$4)",,,,total return tokens / sessions
+,retry waste rate,,<<TBC: measured>>,,,,contract_violation / (contract_valid + contract_violation)
+,memory zero-hit rate,,<<TBC: measured>>,,,,memory_search with hits=0 / all memory_search
+,searches per session,,<<TBC: measured>>,,,,
+,gate override rate,,<<TBC: measured>>,,,,gate_override_used / (gate_blocked + gate_override_used)
+,,,,,,,
+CACHE,item,,value,,,,formula
+,w (write premium) — row 30,,"=IF($D$9="""","""",$D$11/$D$9-1)",,,,cacheWrite / input - 1
+,r (read fraction) — row 31,,"=IF($D$9="""","""",$D$12/$D$9)",,,,cacheRead / input
+,N* (break-even reuses),,"=IF($D$31="""","""",(1+$D$30-$D$31)/(1-$D$31))",,,,(1 + w - r) / (1 - r)
+,observed reuses per cached prefix,,<<TBC: measured or 'cache counts unavailable'>>,,,,do not model a cache you cannot see
+,caching currently paying?,,<<TBC: yes | no | cannot tell from this data>>,,,,
+,,,,,,,
+MEMORY,item,,tokens,,,,source
+,index tokens (always in context) — row 37,,<<TBC: from token_report>>,,,,MCP token_report
+,stored fact tokens (on demand) — row 38,,<<TBC: from token_report>>,,,,MCP token_report
+,blackboard tokens — row 39,,<<TBC: from token_report>>,,,,MCP token_report
+,eager baseline (COUNTERFACTUAL) — row 40,,"=D38+D39",,,,label as counterfactual — never as an observation
+,retrieved fact tokens per session — row 41,,<<TBC: measured>>,,,,searches/session x avg returned fact size
+,memory write cost per session — row 42,,<<TBC: measured>>,,,,memory_write calls + index rebuilds
+,lazy actual per session — row 43,,"=D37+D41",,,,index + retrieved
+,net saving per session — row 44,,"=D40-D43-D42",,,,eager - lazy - write cost. IF NEGATIVE SAY SO.
+,net saving over window — row 45,,"=D44*$D$4",,,,x sessions
+,net saving in money,,"=IF($D$9="""","""",D45*$D$9/1000000)",,,,memory tokens are input tokens; <<UNPRICED>> without pricing.json
+,,,,,,,
+LEVERS,lever,file to change,measured now,expected delta,risk accepted,owner,verify metric + when
+,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>
+,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>
+,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>

@@ -1,0 +1,103 @@
+name: Feature or change
+description: A capability someone needs that does not exist yet
+title: "[feat] "
+labels: ["type:feat", "status:triage", "needs:criteria"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        An item without acceptance criteria is not ready and will not be scheduled. If you
+        cannot write criteria yet, submit anyway and say so in "Open questions" - that is
+        useful information, and the item will be groomed with you rather than guessed at.
+
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome
+      description: |
+        What can someone do afterwards that they cannot do now, and who is "someone"?
+        Describe the capability, not the implementation.
+      placeholder: "Support agents can issue a partial refund without engineering help."
+    validations:
+      required: true
+
+  - type: textarea
+    id: why
+    attributes:
+      label: Why now
+      description: What happens if this is not built? Include a number if you have one.
+      placeholder: "Roughly 40 refund requests/week are escalated to engineering, ~6 h/week."
+    validations:
+      required: true
+
+  - type: textarea
+    id: criteria
+    attributes:
+      label: Acceptance criteria
+      description: |
+        Given / When / Then, one scenario per block. Cover the happy path, at least one
+        rejection path and at least one boundary. Avoid "fast", "secure", "user-friendly" -
+        those must carry a number.
+      placeholder: |
+        Given an order paid 120.00 EUR with no prior refund
+        When an agent issues a refund of 20.00 EUR
+        Then the refund is submitted, the order shows "Refunded 20.00 EUR",
+             and the customer receives a confirmation email within 60 s
+
+        Given an order already fully refunded
+        When an agent issues another refund
+        Then no request reaches the provider and the UI shows "Already fully refunded"
+    validations:
+      required: true
+
+  - type: input
+    id: requirement
+    attributes:
+      label: Requirement id
+      description: "REQ-NNNN if one exists. Leave blank if this is the first record of the need."
+
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Explicitly out of scope
+      description: What this does NOT include. Prevents the boundary being renegotiated later.
+      placeholder: "Bulk refunds; refunds older than 180 days; currency conversion."
+    validations:
+      required: true
+
+  - type: textarea
+    id: questions
+    attributes:
+      label: Open questions
+      description: Anything undecided, with who should decide it. An open question blocks estimation.
+      placeholder: "Maximum refund an agent can issue without approval? - decide: finance lead"
+
+  - type: input
+    id: owner
+    attributes:
+      label: Outcome owner
+      description: The named person who decides whether this achieved what it was for. Not a team.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Requested priority (MoSCoW)
+      description: "'Must' means the release is cancelled without it. If the answer to 'would we ship anyway?' is yes, choose Should."
+      options:
+        - "prio:must"
+        - "prio:should"
+        - "prio:could"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched open and closed issues for a duplicate or a prior decision
+          required: true
+        - label: The outcome above describes a capability, not a chosen solution
+          required: true

@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin.json",
+  "name": "foundry-research",
+  "displayName": "Foundry Research",
+  "version": "0.1.0",
+  "description": "Domain research, technical discovery, documentation engineering and public docs for open source projects.",
+  "author": {
+    "name": "Federico Calò",
+    "url": "https://federicocalo.dev"
+  },
+  "homepage": "https://fedcal.github.io/foundry",
+  "repository": "https://github.com/fedcal/foundry",
+  "license": "Apache-2.0",
+  "keywords": [
+    "claude-code",
+    "foundry",
+    "research",
+    "documentation",
+    "discovery",
+    "docs-as-code"
+  ],
+  "metadata": {
+    "foundry.vertical": "research",
+    "foundry.contracts": "v1"
+  },
+  "dependencies": [
+    {
+      "name": "foundry-core",
+      "version": "^0.1.0"
+    }
+  ],
+  "defaultEnabled": false
+}

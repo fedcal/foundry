@@ -1,0 +1,42 @@
+name: Bug
+description: Something in Foundry behaves differently from what it documents.
+labels: [bug, needs-triage]
+body:
+  - type: markdown
+    attributes:
+      value: A bug report without a reproduction is a guess. Please give us something to run.
+  - type: input
+    id: component
+    attributes:
+      label: Component
+      description: Which plugin, agent, skill, hook or script.
+      placeholder: foundry-core / hooks/guard-bash.mjs
+    validations: { required: true }
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected, and where it says so
+      description: Quote the documentation or the asset that states the expected behaviour.
+    validations: { required: true }
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened instead
+      description: Exact output. Redact secrets, keep everything else verbatim.
+    validations: { required: true }
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      description: The minimal sequence that reproduces it.
+      placeholder: |
+        1. /plugin install foundry-core@foundry
+        2. foundry init
+        3. ...
+    validations: { required: true }
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: Output of `claude --version` and `node --version`, plus the Foundry plugin version.
+    validations: { required: true }

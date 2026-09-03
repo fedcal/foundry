@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin.json",
+  "name": "foundry-economics",
+  "displayName": "Foundry Economics",
+  "version": "0.1.0",
+  "description": "Project cost engineering, business cases and financial plans, AI/token cost control, grant and public funding reporting.",
+  "author": {
+    "name": "Federico Calò",
+    "url": "https://federicocalo.dev"
+  },
+  "homepage": "https://fedcal.github.io/foundry",
+  "repository": "https://github.com/fedcal/foundry",
+  "license": "Apache-2.0",
+  "keywords": [
+    "claude-code",
+    "foundry",
+    "cost",
+    "finops",
+    "business-case",
+    "budget",
+    "funding"
+  ],
+  "metadata": {
+    "foundry.vertical": "economics",
+    "foundry.contracts": "v1"
+  },
+  "dependencies": [
+    {
+      "name": "foundry-core",
+      "version": "^0.1.0"
+    }
+  ],
+  "defaultEnabled": false
+}

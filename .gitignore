@@ -1,0 +1,22 @@
+# Foundry session-local state
+.foundry/scratch/
+.foundry/metrics/
+.foundry/blackboard/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Astro
+site/dist/
+site/.astro/
+
+# Editors and OS
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Local Claude Code state that is not shared
+.claude/settings.local.json
+.claude/worktrees/

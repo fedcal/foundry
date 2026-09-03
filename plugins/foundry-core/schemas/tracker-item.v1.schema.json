@@ -1,0 +1,206 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fedcal.github.io/foundry/schemas/tracker-item.v1.schema.json",
+  "title": "Tracker item",
+  "description": "One unit of work normalised out of a specific issue tracker (GitHub, Jira, Linear, GitLab) into a provider-independent shape. Flow metrics, forecasting and sprint reporting read this and never the provider payload, so a team can change tracker without rewriting every downstream agent. Every normalised field keeps the raw provider value beside it: normalisation that silently discards what it could not map is a defect.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "tracker-item.v1"
+    },
+    "producedBy": {
+      "type": "string",
+      "description": "agent name that produced this artifact"
+    },
+    "provider": {
+      "type": "string",
+      "enum": [
+        "github",
+        "jira",
+        "linear",
+        "gitlab"
+      ]
+    },
+    "sourceId": {
+      "type": "string",
+      "description": "native identifier exactly as the provider spells it: \"#412\", \"PROJ-1183\", \"ENG-77\", \"group/repo!55\"."
+    },
+    "sourceUrl": {
+      "type": "string",
+      "description": "canonical web URL of the item; the only reliable way for a human to check a claim made about it."
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "epic",
+        "story",
+        "task",
+        "bug",
+        "spike",
+        "chore",
+        "unmapped"
+      ],
+      "description": "normalised work type. \"unmapped\" is required, not optional: a provider type with no honest equivalent is reported as unmapped rather than forced into the nearest bucket."
+    },
+    "nativeType": {
+      "type": "string",
+      "description": "provider type verbatim (Jira issuetype.name, GitHub label \"type:*\", Linear/GitLab equivalent)."
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "triage",
+        "ready",
+        "in-progress",
+        "in-review",
+        "blocked",
+        "done",
+        "cancelled",
+        "unmapped"
+      ],
+      "description": "normalised board state. Only \"done\" counts as delivered; \"cancelled\" is closed without delivery and must never be counted as throughput."
+    },
+    "nativeState": {
+      "type": "string",
+      "description": "provider status verbatim (Jira status.name, GitHub state + \"status:*\" label, Linear state, GitLab label). Required so a wrong mapping stays auditable."
+    },
+    "assignees": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "labels": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "estimate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "unit"
+      ],
+      "properties": {
+        "value": {
+          "type": "number",
+          "minimum": 0
+        },
+        "unit": {
+          "type": "string",
+          "enum": [
+            "points",
+            "hours",
+            "days",
+            "none"
+          ],
+          "description": "\"none\" when the item carries no estimate. An absent estimate is never silently read as zero."
+        }
+      }
+    },
+    "parent": {
+      "type": "string",
+      "description": "sourceId of the epic or parent item, when the provider models one."
+    },
+    "sprint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "startedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "endsAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "future",
+            "active",
+            "closed"
+          ]
+        }
+      }
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "closedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "flow": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Transition timestamps needed to compute cycle time and work in progress. Absent when the provider's history was not read — which must be stated, because a cycle time computed from createdAt to closedAt is lead time, not cycle time.",
+      "properties": {
+        "enteredInProgress": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "enteredReview": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "enteredDone": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "blockedDays": {
+          "type": "number",
+          "minimum": 0
+        },
+        "historyRead": {
+          "type": "boolean",
+          "description": "false means the transition timestamps were not available; downstream metrics must degrade to lead time and say so."
+        }
+      }
+    },
+    "blockedBy": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "sourceIds of blocking items."
+    },
+    "tracesTo": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "requirement.v1 ids, ADR numbers or compliance controls this item implements."
+    }
+  },
+  "required": [
+    "schema",
+    "producedBy",
+    "provider",
+    "sourceId",
+    "title",
+    "type",
+    "state",
+    "nativeState"
+  ]
+}

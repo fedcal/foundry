@@ -1,0 +1,35 @@
+name: Jurisdiction pack
+description: Propose a new or corrected compliance jurisdiction pack.
+labels: [legal, asset, needs-triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Packs are **data**, not prompts. State the instrument and the obligation in general terms.
+        Do not supply article numbers, thresholds, deadlines or penalties you have not verified
+        against the current official text — mark them `unverifiedCitation: true` instead.
+        Nothing here is legal advice, and pack content must not present itself as such.
+  - type: input
+    id: jurisdiction
+    attributes:
+      label: Jurisdiction
+      placeholder: Germany / Brazil / California
+    validations: { required: true }
+  - type: textarea
+    id: instruments
+    attributes:
+      label: Instruments to cover
+      description: One per line, with the official name.
+    validations: { required: true }
+  - type: textarea
+    id: applies
+    attributes:
+      label: When each control applies
+      description: The project characteristics that trigger it (data processed, sector, users, geography).
+    validations: { required: true }
+  - type: textarea
+    id: sources
+    attributes:
+      label: Official sources
+      description: Links to the current official text. Secondary commentary is not a source.
+    validations: { required: true }

@@ -1,0 +1,11 @@
+# .github/FUNDING.yml — render only if funding actually exists.
+# An empty or aspirational funding file is worse than none: it advertises a channel
+# nobody watches. Delete every line you cannot receive money through today.
+# Schema: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/displaying-a-sponsor-button-in-your-repository
+
+github: [{{GITHUB_SPONSORS_HANDLES}}]
+open_collective: {{OPEN_COLLECTIVE_SLUG}}
+custom: ["{{CUSTOM_FUNDING_URL}}"]
+
+# Also state, in the README or SUPPORT.md, what funding buys — maintenance time, not
+# priority support — unless you are prepared to honour a support expectation.

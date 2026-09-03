@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "extraKnownMarketplaces": {
+    "foundry": {
+      "source": {
+        "source": "github",
+        "repo": "fedcal/foundry"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "foundry-core@foundry": true,
+    "foundry-oss@foundry": true,
+    "foundry-dev@foundry": true,
+    "foundry-quality@foundry": true,
+    "foundry-ops@foundry": true,
+    "foundry-pmo@foundry": true,
+    "foundry-legal@foundry": true,
+    "foundry-research@foundry": true,
+    "foundry-ai@foundry": true,
+    "foundry-data@foundry": true,
+    "foundry-economics@foundry": true,
+    "foundry-growth@foundry": true
+  },
+  "permissions": {
+    "allow": [
+      "Read(**)",
+      "Glob(**)",
+      "Grep(**)",
+      "Bash(node scripts/*)",
+      "Bash(node --test:*)",
+      "Bash(node --check:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(gh issue:*)",
+      "Bash(gh pr:*)",
+      "Bash(gh run:*)",
+      "Bash(mvn:*)",
+      "Bash(./mvnw:*)",
+      "Bash(gradle:*)",
+      "Bash(./gradlew:*)",
+      "Bash(npm run:*)",
+      "Bash(npx ng:*)",
+      "Bash(npm test:*)",
+      "Bash(npx:*)",
+      "Bash(npm:*)",
+      "Bash(git:*)",
+      "Write(**)",
+      "Edit(**)"
+    ],
+    "ask": [
+      "Bash(git push:*)",
+      "Bash(git tag:*)",
+      "Bash(gh release:*)",
+      "Bash(gh repo create:*)",
+      "Bash(npm publish:*)",
+      "Bash(docker push:*)",
+      "Bash(kubectl apply:*)",
+      "Bash(terraform apply:*)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(**/secrets/**)",
+      "Read(**/*.pem)",
+      "Read(**/*.p12)",
+      "Read(**/dati-personali/**)"
+    ],
+    "defaultMode": "default"
+  }
+}

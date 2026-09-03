@@ -1,0 +1,24 @@
+{
+  "id": "pa-italia",
+  "name": "Pubblica amministrazione italiana",
+  "description": "Software for the Italian public sector: AgID guidelines, accessibility obligations, reuse, procurement evidence.",
+  "plugins": ["foundry-core", "foundry-legal", "foundry-dev", "foundry-quality", "foundry-pmo", "foundry-oss", "foundry-economics"],
+  "foundryConfig": {
+    "enforcement": "gate",
+    "indexTokenBudget": 5000,
+    "protectedPaths": [".github/workflows/**", "**/*.lock", "**/accessibility-statement*", "docs/adr/**"]
+  },
+  "jurisdictionPacks": ["global-baseline", "eu", "it"],
+  "permissions": {
+    "allow": ["Read(**)", "Glob(**)", "Grep(**)", "Bash(git status:*)", "Bash(git diff:*)", "Bash(git log:*)"],
+    "ask": ["Bash(git push:*)", "Bash(gh release:*)"],
+    "deny": ["Read(./.env)", "Read(./.env.*)", "Read(**/dati-personali/**)"],
+    "defaultMode": "default"
+  },
+  "recommendedMcpServers": ["foundry", "filesystem", "git"],
+  "notes": [
+    "Accessibility is a legal obligation here, not a quality goal: the accessibility statement is a protected file.",
+    "ADRs are protected because procurement and audit rely on the decision trail.",
+    "Every compliance output carries the disclaimer that it is not legal advice and must be confirmed against current official texts."
+  ]
+}

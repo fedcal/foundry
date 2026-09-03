@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin.json",
+  "name": "foundry-oss",
+  "displayName": "Foundry OSS Governance",
+  "version": "0.1.0",
+  "description": "Open source governance: contribution workflow, RFC process, issue triage, security policy, semantic versioning and release communication.",
+  "author": {
+    "name": "Federico Calò",
+    "url": "https://federicocalo.dev"
+  },
+  "homepage": "https://fedcal.github.io/foundry",
+  "repository": "https://github.com/fedcal/foundry",
+  "license": "Apache-2.0",
+  "keywords": [
+    "claude-code",
+    "foundry",
+    "open-source",
+    "governance",
+    "rfc",
+    "triage",
+    "semver"
+  ],
+  "metadata": {
+    "foundry.vertical": "governance",
+    "foundry.contracts": "v1"
+  },
+  "dependencies": [
+    {
+      "name": "foundry-core",
+      "version": "^0.1.0"
+    }
+  ],
+  "defaultEnabled": false
+}

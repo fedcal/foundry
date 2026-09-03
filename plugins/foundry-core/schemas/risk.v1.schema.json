@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fedcal.github.io/foundry/schemas/risk.v1.schema.json",
+  "title": "Risk",
+  "description": "A risk with quantified exposure and an owned mitigation.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "risk.v1"
+    },
+    "producedBy": {
+      "type": "string",
+      "description": "agent name that produced this artifact"
+    },
+    "id": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 120
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "technical",
+        "schedule",
+        "cost",
+        "security",
+        "compliance",
+        "operational",
+        "vendor",
+        "people"
+      ]
+    },
+    "probability": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "impactEur": {
+      "type": "number",
+      "minimum": 0
+    },
+    "exposureEur": {
+      "type": "number",
+      "minimum": 0,
+      "description": "probability x impact"
+    },
+    "detection": {
+      "type": "string"
+    },
+    "mitigation": {
+      "type": "string"
+    },
+    "contingency": {
+      "type": "string"
+    },
+    "owner": {
+      "type": "string"
+    },
+    "reviewBy": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "mitigating",
+        "accepted",
+        "closed"
+      ]
+    }
+  },
+  "required": [
+    "schema",
+    "producedBy",
+    "id",
+    "title",
+    "category",
+    "probability",
+    "impactEur",
+    "mitigation",
+    "owner",
+    "status"
+  ]
+}

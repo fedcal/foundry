@@ -1,0 +1,381 @@
+{
+  "pack": {
+    "id": "it",
+    "name": "Italy (national layer over eu.json)",
+    "scope": "The Italian national layer that sits ON TOP OF eu.json and never replaces it. Covers the Codice privacy as adapted to the GDPR, Garante measures that bind engineering choices, the Stanca Law and the AgID accessibility guidelines, the Codice dell'Amministrazione Digitale rules on acquiring and reusing public-sector software, and the documentation duties that appear in public procurement. Load this pack only together with eu.json: on its own it is incomplete by construction. This pack deliberately excludes: labour law beyond the monitoring rules that touch logging, tax and e-invoicing, sector supervision by Banca d'Italia, IVASS or CONSOB, and regional legislation.",
+    "lastReviewed": null,
+    "sources": [
+      {
+        "instrument": "AgID — accessibilità",
+        "url": "https://www.agid.gov.it/it/design-servizi/accessibilita",
+        "checkedOn": "2026-08-27"
+      },
+      {
+        "instrument": "Normattiva (consolidated Italian law, including L. 4/2004 and the CAD)",
+        "url": "https://www.normattiva.it/",
+        "checkedOn": "2026-08-27"
+      }
+    ],
+    "verificationRequired": "Automated technical assessment. Not legal advice. Italian law and Garante guidance move quickly, and AgID guidelines are revised on their own cadence. lastReviewed is null: no citation here has been confirmed against Normattiva, the Gazzetta Ufficiale or the AgID and Garante registers. Controls flagged unverifiedCitation carry a citation not checked at article level. Confirm every control against the current official text and have a qualified Italian lawyer or DPO confirm anything consequential."
+  },
+  "controls": [
+    {
+      "controlId": "it-codice-privacy-national-rules",
+      "theme": "privacy",
+      "instrument": "Codice in materia di protezione dei dati personali (D.Lgs. 196/2003, as amended by D.Lgs. 101/2018)",
+      "requirement": "Italian national provisions supplement the GDPR where the Regulation leaves room for Member State law: national derogations and specifications apply in addition to, not instead of, the GDPR analysis in eu.json.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal",
+          "markets.it"
+        ]
+      },
+      "evidenceHints": [
+        "doc: whether the privacy documentation was written against the GDPR only or also against the Codice",
+        "ask: which national specifications the organisation has identified as relevant",
+        "doc: the Italian-language privacy notice, which is what data subjects in Italy will actually read"
+      ],
+      "severity": "high"
+    },
+    {
+      "controlId": "it-garante-cookie-guidance",
+      "theme": "privacy",
+      "instrument": "Garante per la protezione dei dati personali — guidelines on cookies and other tracking tools",
+      "requirement": "The Garante has issued specific guidance on cookie banners and tracking technologies, addressing among other things the prominence of the refusal option, the treatment of scroll as consent, the reuse of identifiers and the re-presentation of the banner to users who refused.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.it"
+        ],
+        "anyOf": [
+          "product.web-ui",
+          "product.mobile-app"
+        ]
+      },
+      "evidenceHints": [
+        "cmd: load the site from a clean profile and record every write to terminal equipment before interaction",
+        "code: whether closing the banner without choosing is treated as consent",
+        "code: how often the banner reappears for a user who refused"
+      ],
+      "severity": "high",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "it-garante-sysadmin-logs",
+      "theme": "security",
+      "instrument": "Garante — measure on system administrators (amministratori di sistema)",
+      "requirement": "Organisations must identify and designate system administrators individually, and maintain access logs for their activity with characteristics of completeness, integrity and a defined retention period, verifying their activity periodically.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.it",
+          "data.personal"
+        ]
+      },
+      "evidenceHints": [
+        "doc: the list of designated system administrators, with named individuals rather than roles",
+        "config: access logging on production infrastructure, and whether administrators can alter their own logs",
+        "doc: the retention period applied to those logs and the periodic verification record"
+      ],
+      "severity": "high",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "it-worker-monitoring",
+      "theme": "privacy",
+      "instrument": "Statuto dei lavoratori (L. 300/1970) Art. 4 — remote monitoring of workers, read with the Codice privacy",
+      "requirement": "Tools from which remote monitoring of workers may derive can be used only for organisational, production, workplace safety or asset protection purposes, subject to union agreement or administrative authorisation, and workers must be adequately informed about how the tools are used and how checks are carried out.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.it"
+        ],
+        "anyOf": [
+          "data.employee",
+          "users.employee"
+        ]
+      },
+      "evidenceHints": [
+        "code: application and infrastructure logs that reveal individual employee activity",
+        "config: endpoint agents, productivity analytics, email metadata retention",
+        "doc: the union agreement or authorisation, and the worker information notice"
+      ],
+      "severity": "high",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "it-garante-email-metadata",
+      "theme": "privacy",
+      "instrument": "Garante — guidance on the retention of employee email metadata",
+      "requirement": "The Garante has addressed how long metadata generated by corporate email systems may be retained before the retention itself amounts to monitoring of workers. Confirm the current position and any retention period stated in it before configuring mail infrastructure.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.it"
+        ],
+        "anyOf": [
+          "data.employee",
+          "users.employee"
+        ]
+      },
+      "evidenceHints": [
+        "config: the actual retention configured on the mail platform for logs and metadata",
+        "doc: the documented justification for the retention period chosen",
+        "ask: was the works council or a union representative involved"
+      ],
+      "severity": "medium",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "it-stanca-accessibility",
+      "theme": "accessibility",
+      "instrument": "Legge 9 gennaio 2004, n. 4 (Legge Stanca), as amended",
+      "requirement": "Public bodies and the private entities brought within scope by subsequent amendments must make their websites, mobile applications and, where applicable, other services accessible, and must publish the required accessibility declaration.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.it"
+        ],
+        "anyOf": [
+          "product.web-ui",
+          "product.mobile-app",
+          "org.public-body",
+          "org.sells-to-eu-public-sector"
+        ]
+      },
+      "evidenceHints": [
+        "doc: whether the organisation falls in scope as a public body or as a covered private entity",
+        "doc: the published accessibility declaration and its date",
+        "cmd: an audit against the technical requirements referenced by the AgID guidelines"
+      ],
+      "severity": "high",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "it-agid-accessibility-guidelines",
+      "theme": "accessibility",
+      "instrument": "AgID — Linee guida sull'accessibilità degli strumenti informatici",
+      "requirement": "Accessibility is assessed against the technical requirements set by the AgID guidelines, which reference EN 301 549, and the accessibility declaration must be produced through the procedure and template that AgID prescribes, including a self-assessment and a review cadence.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.it"
+        ],
+        "anyOf": [
+          "org.public-body",
+          "org.sells-to-eu-public-sector",
+          "users.public-sector"
+        ]
+      },
+      "evidenceHints": [
+        "doc: the declaration produced through the AgID form rather than a hand-written page",
+        "doc: the self-assessment questionnaire, where required",
+        "doc: the date of the last review — declarations go stale annually"
+      ],
+      "severity": "high",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "it-accessibility-feedback-channel",
+      "theme": "accessibility",
+      "instrument": "Legge 9 gennaio 2004, n. 4 and AgID guidelines — feedback and enforcement route",
+      "requirement": "A working feedback mechanism must let any person report an accessibility barrier and request the content in an accessible form, and the declaration must state the enforcement route available if the response is unsatisfactory.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.it"
+        ],
+        "anyOf": [
+          "product.web-ui",
+          "product.mobile-app"
+        ]
+      },
+      "evidenceHints": [
+        "code: the feedback form or address published in the declaration — test that it delivers",
+        "doc: an internal owner and a response time for accessibility reports",
+        "doc: a log of reports received and how they were resolved"
+      ],
+      "severity": "medium"
+    },
+    {
+      "controlId": "it-cad-comparative-assessment",
+      "theme": "governance",
+      "instrument": "Codice dell'Amministrazione Digitale (D.Lgs. 82/2005) Art. 68 — comparative assessment of solutions",
+      "requirement": "Public administrations acquire software following a documented comparative assessment of the available options, including reusable solutions and free and open-source software, on the basis of the criteria set out in the CAD, and record the reasons for the choice.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.it"
+        ],
+        "anyOf": [
+          "org.public-body",
+          "org.sells-to-eu-public-sector",
+          "users.public-sector"
+        ]
+      },
+      "evidenceHints": [
+        "doc: the comparative assessment document for the acquisition in question",
+        "doc: whether reusable solutions in the national catalogue were examined",
+        "ask: is the supplier expected to produce this document, or the administration"
+      ],
+      "severity": "high"
+    },
+    {
+      "controlId": "it-cad-reuse-open-source",
+      "theme": "licensing",
+      "instrument": "Codice dell'Amministrazione Digitale (D.Lgs. 82/2005) Art. 69 — reuse of solutions and open standards",
+      "requirement": "Public administrations that commission bespoke software must make the source code available for reuse under an open licence, with the documentation needed to reuse it, unless a stated exception applies. Contracts must secure the rights necessary to do so.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.it"
+        ],
+        "anyOf": [
+          "org.public-body",
+          "org.sells-to-eu-public-sector",
+          "users.public-sector"
+        ]
+      },
+      "evidenceHints": [
+        "doc: the contract clause assigning or licensing the code to the administration",
+        "doc: publication of the repository with an open licence and a publiccode.yml descriptor",
+        "cmd: check the repository for proprietary third-party components that block reuse"
+      ],
+      "severity": "high"
+    },
+    {
+      "controlId": "it-agid-software-acquisition-guidelines",
+      "theme": "governance",
+      "instrument": "AgID — Linee guida su acquisizione e riuso di software per le pubbliche amministrazioni",
+      "requirement": "The acquisition and reuse of software for public administrations follows the AgID guidelines, which govern the assessment procedure, the publication of source code, the licensing to be applied and the maintenance commitments expected from the publishing administration.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.it"
+        ],
+        "anyOf": [
+          "org.public-body",
+          "org.sells-to-eu-public-sector",
+          "users.public-sector"
+        ]
+      },
+      "evidenceHints": [
+        "doc: publiccode.yml present and valid in the published repository",
+        "doc: the maintenance and support commitment stated for the published software",
+        "doc: a reuse licence compatible with the third-party components actually used"
+      ],
+      "severity": "medium",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "it-agid-interoperability",
+      "theme": "governance",
+      "instrument": "AgID — interoperability guidelines for public administration (ModI) and the national digital data platform",
+      "requirement": "Interfaces exposed by or to public administrations follow the national interoperability model: registered API specifications, prescribed security profiles and the documented interaction patterns, rather than ad hoc integrations.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.it"
+        ],
+        "anyOf": [
+          "org.public-body",
+          "org.sells-to-eu-public-sector",
+          "users.public-sector"
+        ]
+      },
+      "evidenceHints": [
+        "code: OpenAPI specifications and whether they follow the required profile and metadata",
+        "config: the authentication and message security profile applied to the API",
+        "doc: registration of the interface in the national catalogue where required"
+      ],
+      "severity": "medium",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "it-public-procurement-documentation",
+      "theme": "records",
+      "instrument": "Codice dei contratti pubblici (D.Lgs. 36/2023) — documentation duties in public procurement",
+      "requirement": "Supplying software to a public administration carries documentation duties across the contract lifecycle, including technical documentation supporting the award criteria, evidence of the requirements claimed in the tender, and traceability of the contract execution.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.it"
+        ],
+        "anyOf": [
+          "org.sells-to-eu-public-sector",
+          "users.public-sector",
+          "org.public-body"
+        ]
+      },
+      "evidenceHints": [
+        "doc: the technical documentation submitted with the tender, and whether the delivered product still matches it",
+        "doc: accessibility, security and privacy claims made in the tender, each traced to evidence",
+        "ask: which claims in the offer would you be unable to prove today"
+      ],
+      "severity": "high",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "it-agid-cloud-qualification",
+      "theme": "governance",
+      "instrument": "ACN and AgID — qualification of cloud services and classification of public administration data",
+      "requirement": "Public administrations classify their data and services and may use only cloud infrastructure and services qualified under the national scheme for the corresponding class, with consequences for where data may reside and which provider may host it.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.it"
+        ],
+        "anyOf": [
+          "org.public-body",
+          "org.sells-to-eu-public-sector",
+          "users.public-sector"
+        ]
+      },
+      "evidenceHints": [
+        "config: the actual hosting provider and region of every production component",
+        "doc: the data and service classification performed by the administration",
+        "doc: qualification status of the services used under the national scheme"
+      ],
+      "severity": "high",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "it-nis2-transposition",
+      "theme": "security",
+      "instrument": "Italian transposition of the NIS2 Directive, supervised by ACN",
+      "requirement": "Entities in scope in Italy must register with the national authority, apply the national cybersecurity risk-management measures and follow the national incident notification procedure and deadlines, which are set by the transposing decree rather than by the Directive alone.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.it"
+        ],
+        "anyOf": [
+          "sector.energy",
+          "sector.transport",
+          "sector.health",
+          "sector.water",
+          "sector.digital-infrastructure",
+          "sector.public",
+          "sector.telecom",
+          "sector.manufacturing"
+        ]
+      },
+      "evidenceHints": [
+        "doc: registration with the national authority, where the entity is in scope",
+        "doc: an incident runbook naming the national reporting portal and the national deadlines",
+        "ask: has anyone determined in writing whether the entity is essential, important or out of scope"
+      ],
+      "severity": "critical",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "it-digital-preservation",
+      "theme": "records",
+      "instrument": "AgID — Linee guida sulla formazione, gestione e conservazione dei documenti informatici",
+      "requirement": "Where the system produces documents that must be preserved with legal effect, formation, management and long-term preservation follow the AgID guidelines, including metadata, formats and the role of the preservation service.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.it"
+        ],
+        "anyOf": [
+          "org.public-body",
+          "org.sells-to-eu-public-sector",
+          "users.public-sector"
+        ]
+      },
+      "evidenceHints": [
+        "code: the formats in which documents are generated and whether they carry the prescribed metadata",
+        "config: integration with a preservation service, if any",
+        "doc: which documents the organisation considers subject to preservation duties"
+      ],
+      "severity": "medium",
+      "unverifiedCitation": true
+    }
+  ]
+}

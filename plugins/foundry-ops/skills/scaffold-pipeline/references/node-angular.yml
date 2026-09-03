@@ -1,0 +1,207 @@
+# Node / Angular CI.
+# Every <PLACEHOLDER> must be resolved before use:
+#   SHA        -> gh api repos/<OWNER>/<REPO>/commits/<TAG> --jq '.sha'
+#   NODE-MAJOR -> read from .nvmrc or package.json "engines.node"; do not guess
+# Angular-only steps are marked; delete them for a plain Node project.
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [<DEFAULT-BRANCH>]
+
+# Floor for the whole workflow. Jobs elevate individually.
+permissions:
+  contents: read
+
+# Validation: superseded runs are wasted compute, cancel them.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "<NODE-MAJOR>"
+
+jobs:
+  # ---------------------------------------------------------------- install
+  # Resolve dependencies once; every other job restores the same cache key.
+  install:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      cache-key: ${{ steps.key.outputs.value }}
+    steps:
+      - uses: actions/checkout@<SHA> # <TAG>
+        with: { persist-credentials: false }
+
+      - id: key
+        run: echo "value=${{ runner.os }}-${{ runner.arch }}-node${{ env.NODE_VERSION }}-${{ hashFiles('**/package-lock.json') }}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@<SHA> # <TAG>
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      # npm ci fails on a lockfile/manifest mismatch. That is the point:
+      # it refuses to silently resolve a different dependency tree than the one reviewed.
+      - run: npm ci --no-audit --no-fund
+
+      - uses: actions/cache/save@<SHA> # <TAG>
+        with:
+          path: node_modules
+          key: ${{ steps.key.outputs.value }}
+
+  # ------------------------------------------------------------ fast checks
+  # Siblings of build, not children: they fail in ~2 minutes and are actionable.
+  quality:
+    needs: install
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false          # compatibility-style matrix: report every failing check
+      matrix:
+        check: [lint, format, typecheck]
+    steps:
+      - uses: actions/checkout@<SHA> # <TAG>
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@<SHA> # <TAG>
+        with: { node-version: "<NODE-MAJOR>" }
+      - uses: actions/cache/restore@<SHA> # <TAG>
+        with:
+          path: node_modules
+          key: ${{ needs.install.outputs.cache-key }}
+          fail-on-cache-miss: true
+      # Map each matrix leg to the script that exists in this repository.
+      - run: npm run ${{ matrix.check }}
+
+  # ------------------------------------------------------------------ build
+  # Build ONCE. Downstream jobs consume this artefact; nothing rebuilds.
+  build:
+    needs: install
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@<SHA> # <TAG>
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@<SHA> # <TAG>
+        with: { node-version: "<NODE-MAJOR>" }
+      - uses: actions/cache/restore@<SHA> # <TAG>
+        with:
+          path: node_modules
+          key: ${{ needs.install.outputs.cache-key }}
+          fail-on-cache-miss: true
+
+      # Angular: --configuration production. Plain Node: npm run build.
+      - run: npm run build -- --configuration production
+
+      - uses: actions/upload-artifact@<SHA> # <TAG>
+        with:
+          name: dist
+          path: dist/
+          retention-days: 7      # always explicit; the default costs storage forever
+
+  # ------------------------------------------------------------------- test
+  test:
+    needs: install
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@<SHA> # <TAG>
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@<SHA> # <TAG>
+        with: { node-version: "<NODE-MAJOR>" }
+      - uses: actions/cache/restore@<SHA> # <TAG>
+        with:
+          path: node_modules
+          key: ${{ needs.install.outputs.cache-key }}
+          fail-on-cache-miss: true
+
+      # Angular headless run. For a plain Node project use the repository's test script.
+      - run: npm test -- --watch=false --browsers=ChromeHeadless --code-coverage
+
+      # Coverage gate. <MIN-COVERAGE> is a project decision, kept in ONE place.
+      - name: Coverage gate
+        run: |
+          set -euo pipefail
+          PCT=$(node -e "const s=require('./coverage/coverage-summary.json');console.log(s.total.lines.pct)")
+          echo "lines: $PCT% (min <MIN-COVERAGE>%)"
+          awk -v p="$PCT" -v m="<MIN-COVERAGE>" 'BEGIN { exit (p+0 >= m+0) ? 0 : 1 }'
+
+      - uses: actions/upload-artifact@<SHA> # <TAG>
+        if: always()
+        with: { name: coverage, path: coverage/, retention-days: 7 }
+
+  # --------------------------------------------------------------- security
+  security:
+    needs: install
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write     # upload SARIF to code scanning
+    steps:
+      - uses: actions/checkout@<SHA> # <TAG>
+        with:
+          fetch-depth: 0         # secret scanning needs history
+          persist-credentials: false
+      - uses: actions/setup-node@<SHA> # <TAG>
+        with: { node-version: "<NODE-MAJOR>" }
+
+      # Gate on FIXABLE findings only. A gate that fires on an unfixable CVE gets bypassed.
+      - name: Dependency audit (fixable high+)
+        run: |
+          set -euo pipefail
+          npm audit --audit-level=high --omit=dev --json > audit.json || true
+          COUNT=$(node -e "
+            const a=require('./audit.json');
+            const v=Object.values(a.vulnerabilities||{});
+            console.log(v.filter(x=>['high','critical'].includes(x.severity)&&x.fixAvailable).length);
+          ")
+          echo "fixable high/critical: $COUNT"
+          test "$COUNT" -eq 0
+
+      # Secret scanning: pin the scanner like any other third-party action.
+      - uses: <SECRET-SCANNER-OWNER>/<SECRET-SCANNER-REPO>@<SHA> # <TAG>
+        with:
+          # scan only the PR range on pull_request; the full history on push
+          extra_args: --redact
+
+  # ------------------------------------------------------------------- SBOM
+  sbom:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@<SHA> # <TAG>
+        with: { persist-credentials: false }
+      - uses: actions/download-artifact@<SHA> # <TAG>
+        with: { name: dist, path: dist/ }
+      # CycloneDX or SPDX, generated from the BUILT artefact plus the lockfile,
+      # so it reflects what actually ships rather than what the manifest hoped for.
+      - uses: <SBOM-ACTION-OWNER>/<SBOM-ACTION-REPO>@<SHA> # <TAG>
+        with:
+          path: .
+          format: cyclonedx-json
+          output-file: sbom.cdx.json
+      - uses: actions/upload-artifact@<SHA> # <TAG>
+        with: { name: sbom, path: sbom.cdx.json, retention-days: 90 }
+
+  # ------------------------------------------------------- aggregation gate
+  # THIS is the required check. Matrix leg names change; this name does not.
+  # `if: always()` plus an explicit result test - otherwise a skipped upstream
+  # job reports success to branch protection and the gate is bypassable.
+  ci-complete:
+    if: always()
+    needs: [quality, build, test, security, sbom]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify every required job succeeded
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          set -euo pipefail
+          echo "$RESULTS"
+          echo "$RESULTS" | grep -q '"result": *"failure"'   && exit 1
+          echo "$RESULTS" | grep -q '"result": *"cancelled"' && exit 1
+          exit 0

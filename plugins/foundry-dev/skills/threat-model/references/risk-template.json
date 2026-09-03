@@ -1,0 +1,21 @@
+{
+  "_comment": "Copyable risk.v1 skeleton. additionalProperties is false in the schema: remove every underscore-prefixed key before writing. Required: schema, producedBy, id, title, category, probability, impactEur, mitigation, owner, status.",
+  "schema": "risk.v1",
+  "producedBy": "security-architect",
+  "id": "T-01",
+  "title": "<=120 chars, states the threat, not the topic",
+  "category": "security",
+  "probability": 0.36,
+  "impactEur": 250000,
+  "exposureEur": 90000,
+  "detection": "The signal that shows this threat is being exercised now: log field, metric name, alert rule. Include the impactEur basis here.",
+  "mitigation": "Imperative, names the file or component that changes. Proof: <test id or MISSING - path where it must live>",
+  "contingency": "What to do if the mitigation fails in production.",
+  "owner": "team-or-role",
+  "reviewBy": "2026-09-30",
+  "status": "open",
+  "_categoryEnum": ["technical", "schedule", "cost", "security", "compliance", "operational", "vendor", "people"],
+  "_statusEnum": ["open", "mitigating", "accepted", "closed"],
+  "_exposureRule": "exposureEur = probability * impactEur, computed not typed",
+  "_probabilityRule": "clamp((E * I) / 25, 0.01, 0.95) with E and I on 1-5 scales, each justified in one clause"
+}

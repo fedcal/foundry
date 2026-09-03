@@ -1,0 +1,152 @@
+# Canary with Argo Rollouts.
+#
+# Do not reach this file until all four preconditions hold (see strategy-matrix.md):
+#   1. a real traffic splitter        2. enough traffic to decide
+#   3. per-version metrics            4. automated analysis WITH automatic abort
+# Missing any one of them means this is not a canary. Name the missing one and
+# choose blue-green instead.
+#
+# Resolve <PLACEHOLDER>s from measurements; the step weights and pauses below are
+# structure, not recommended values.
+
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: <NAME>
+  namespace: <NS>
+spec:
+  replicas: <N>
+  revisionHistoryLimit: 5
+  # `progressDeadlineSeconds` also aborts a canary that never becomes healthy.
+  progressDeadlineSeconds: <SECONDS>
+  selector:
+    matchLabels: { app: <NAME> }
+  strategy:
+    canary:
+      canaryService: <NAME>-canary
+      stableService: <NAME>-stable
+      trafficRouting:
+        # Use whichever your cluster actually has. Weighted routing at the proxy
+        # is what distinguishes a canary from "one pod out of ten".
+        <TRAFFIC-ROUTER>:
+          <ROUTER-CONFIG>
+      # Analysis runs alongside every step from here on, and aborts the rollout
+      # the moment a metric fails. A canary a human eyeballs at 02:00 is a rolling
+      # update with worse ergonomics.
+      analysis:
+        templates:
+          - templateName: <NAME>-canary-analysis
+        startingStep: 1
+        args:
+          - name: service
+            value: <NAME>-canary
+          - name: stable-service
+            value: <NAME>-stable
+      steps:
+        # Weights and pauses come from the sample-size calculation, NOT from
+        # habit. At your trough traffic rate, each pause must be long enough to
+        # distinguish the canary error rate from the baseline's noise.
+        - setWeight: <W1>
+        - pause: { duration: <PAUSE-1> }
+        - setWeight: <W2>
+        - pause: { duration: <PAUSE-2> }
+        - setWeight: <W3>
+        - pause: { duration: <PAUSE-3> }
+        # A manual gate before 100% is worth keeping for high-risk releases:
+        # - pause: {}    # indefinite; resume with `kubectl argo rollouts promote <NAME>`
+  template:
+    metadata:
+      labels:
+        app: <NAME>
+        version: <VERSION>     # MUST also appear on every metric and log line,
+                               # or the canary's errors are diluted by the stable
+                               # pods and a bad build gets promoted with confidence
+      annotations:
+        checksum/config: "<SHA256-OF-RENDERED-CONFIGMAP>"
+    spec:
+      terminationGracePeriodSeconds: <SECONDS>
+      containers:
+        - name: <CONTAINER>
+          image: <REGISTRY>/<IMAGE>@sha256:<DIGEST>
+          # probes, resources, securityContext: as in rolling-update.yaml
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: <NAME>-canary-analysis
+  namespace: <NS>
+spec:
+  args:
+    - name: service
+    - name: stable-service
+  metrics:
+    # --- error rate, canary vs its OWN baseline threshold --------------------
+    - name: error-rate
+      interval: <INTERVAL>
+      # count/failureLimit: how many consecutive bad measurements abort the
+      # rollout. 1 is trigger-happy on noisy metrics; 3 is a common floor.
+      failureLimit: <N-FAILURES>
+      # Give the canary pods time to warm up before judging them. Without this,
+      # cold-start latency fails the first measurement of every rollout.
+      initialDelay: <WARMUP>
+      successCondition: result[0] <= <THRESHOLD-FROM-MEASURED-BASELINE>
+      provider:
+        prometheus:
+          address: <PROMETHEUS-URL>
+          query: |
+            sum(rate(http_requests_total{service="{{args.service}}",status=~"5.."}[<WINDOW>]))
+              /
+            sum(rate(http_requests_total{service="{{args.service}}"}[<WINDOW>]))
+
+    # --- latency, COMPARED with stable, not against an absolute number -------
+    # An absolute threshold hides a doubling that is still "under 500ms".
+    - name: latency-p95-ratio
+      interval: <INTERVAL>
+      failureLimit: <N-FAILURES>
+      initialDelay: <WARMUP>
+      successCondition: result[0] <= <MAX-RATIO>
+      provider:
+        prometheus:
+          address: <PROMETHEUS-URL>
+          query: |
+            histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{service="{{args.service}}"}[<WINDOW>])) by (le))
+              /
+            histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{service="{{args.stable_service}}"}[<WINDOW>])) by (le))
+
+    # --- a BUSINESS signal --------------------------------------------------
+    # Error rate and latency both look fine when a build returns HTTP 200 with
+    # wrong data. This metric is what catches that.
+    - name: <BUSINESS-SIGNAL>
+      interval: <INTERVAL>
+      failureLimit: <N-FAILURES>
+      successCondition: result[0] >= <FLOOR-FROM-MEASURED-BASELINE>
+      provider:
+        prometheus:
+          address: <PROMETHEUS-URL>
+          query: <BUSINESS-QUERY>
+
+# --- Operating procedure -----------------------------------------------------
+#
+#   kubectl argo rollouts get rollout <NAME> -n <NS> --watch
+#   kubectl argo rollouts promote <NAME> -n <NS>            # advance past a manual pause
+#
+# ROLLBACK - abort first, diagnose second:
+#   kubectl argo rollouts abort <NAME> -n <NS>
+#     -> returns 100% of traffic to stable immediately
+#   kubectl argo rollouts undo  <NAME> -n <NS> --to-revision=<N>
+#     -> reverts the spec as well
+#
+# ALWAYS verify the post-abort weight explicitly. An abort that fails partway can
+# leave the split in an indeterminate state:
+#   kubectl argo rollouts get rollout <NAME> -n <NS> -o json | jq '.status.canary'
+#
+# Under GitOps, `undo` is reverted by the controller on the next sync. The durable
+# rollback is `git revert` of the manifest commit; its duration is the sync
+# interval plus reconcile time. Measure that number and put it in the runbook.
+#
+# What abort does NOT undo: migrations, ConfigMap/Secret changes, consumed
+# messages, external side effects, or CDN content populated by the canary.
+#
+# Canary catches FAST failures. It does not catch memory or connection leaks that
+# take longer than the analysis window - those reach 100% with full confidence
+# behind them. Keep watching after promotion.

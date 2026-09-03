@@ -1,0 +1,47 @@
+{
+  "id": "full",
+  "name": "Everything",
+  "description": "All twelve plugins. Use to explore Foundry; in a real project pick a narrower profile to keep discovery cheap.",
+  "plugins": [
+    "foundry-core",
+    "foundry-research",
+    "foundry-dev",
+    "foundry-quality",
+    "foundry-ai",
+    "foundry-data",
+    "foundry-ops",
+    "foundry-pmo",
+    "foundry-economics",
+    "foundry-legal",
+    "foundry-growth",
+    "foundry-oss"
+  ],
+  "foundryConfig": {
+    "enforcement": "gate",
+    "indexTokenBudget": 6000
+  },
+  "permissions": {
+    "allow": [
+      "Read(**)",
+      "Glob(**)",
+      "Grep(**)"
+    ],
+    "ask": [
+      "Bash(git push:*)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)"
+    ],
+    "defaultMode": "default"
+  },
+  "recommendedMcpServers": [
+    "foundry",
+    "filesystem",
+    "git",
+    "github"
+  ],
+  "notes": [
+    "Every installed plugin's skill and agent descriptions are loaded for routing. Twelve plugins is a real, if modest, standing cost — narrower is better once you know what you need."
+  ]
+}

@@ -1,0 +1,216 @@
+---
+title: Quickstart
+description: Ten minutes on a real project — initialise state, seed memory, hit that memory from a prompt, watch a gate fire, and read the token report.
+sidebar:
+  order: 2
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+Do this on a project you already work on. Foundry has nothing to show on an empty directory: every
+mechanism here operates on facts about a real codebase.
+
+The example below assumes a Spring Boot service with an Angular frontend, but nothing in the steps
+depends on that stack.
+
+<Steps>
+
+1. ### Create the state directory
+
+   ```bash
+   cd ~/work/acme-api
+   foundry init
+   ```
+
+   ```
+   Initialised Foundry state in .foundry
+   Next: seed memory with the `foundry-init` skill, then run `foundry doctor`.
+   ```
+
+   That single command creates `.foundry/{scratch,memory/facts,runbooks,blackboard,metrics}`, writes
+   a default `config.json` and an empty `overrides.json`, appends `.foundry/scratch/`,
+   `.foundry/metrics/` and `.foundry/blackboard/` to `.gitignore`, and builds an empty `INDEX.md`.
+
+   It is idempotent. Re-running it on an existing project prints `Repaired Foundry state in .foundry`
+   and never overwrites a `config.json` or `overrides.json` that already exists — which also means
+   editing those files by hand is safe.
+
+2. ### Seed 5 to 15 facts
+
+   Run the bootstrap skill, which reads the README, any `docs/adr/`, `CONTRIBUTING.md` and the CI
+   configuration, and proposes facts from what it finds:
+
+   ```
+   /foundry-core:foundry-init
+   ```
+
+   Or write facts directly. This is the `memory_write` tool of the `foundry` MCP server, as an agent
+   would call it:
+
+   ```
+   memory_write(
+     type: "decision",
+     title: "PostgreSQL 16 is the only supported database",
+     body: "**Why:** we depend on MERGE and partition-wise joins; MySQL 8 has neither.\n**How to apply:** write migrations as plain SQL under src/main/resources/db/migration and test against postgres:16-alpine.",
+     tags: ["database", "postgres", "migrations"],
+     confidence: "high",
+     source: "adr-0004"
+   )
+   ```
+
+   It replies with the action it took and the current cost of the index:
+
+   ```
+   created: fact-0001
+   Index: 1/1 facts listed, ~15 tokens.
+   ```
+
+   Aim for **5 to 15** facts, not fifty. The index is capped at 4000 tokens and is loaded on every
+   session, so noise in it is a tax you pay forever. Good first facts: the deployment target, the
+   test command, the branching model, the database and its version constraint, the authentication
+   approach, and any non-functional target already agreed with a number attached.
+
+   <Aside type="caution" title="decision and risk facts need reasoning">
+   For `type: "decision"` and `type: "risk"`, the body must contain a literal `**Why:**` line.
+   `foundry doctor` searches for exactly that string and fails the run without it.
+   </Aside>
+
+3. ### Check what the index costs
+
+   ```bash
+   foundry memory index
+   ```
+
+   ```
+   9/9 facts listed, ~142 tokens, 0 omitted.
+   ```
+
+   The three numbers are: facts listed in the index, facts active in memory, and the estimated token
+   cost. If the third column is near your budget and the first is below the second, entries are being
+   dropped — see [Memory](/foundry/en/concepts/memory/).
+
+4. ### Ask something that hits memory
+
+   Start a new session, so the `SessionStart` hook injects the index, and ask:
+
+   ```
+   Which database are we committed to, and why?
+   ```
+
+   Before Claude sees the prompt, the `UserPromptSubmit` hook searches memory and prepends what it
+   found:
+
+   ```
+   ## Relevant project memory
+   - **fact-0001** (decision, high): PostgreSQL 16 is the only supported database
+     **Why:** we depend on MERGE and partition-wise joins; MySQL 8 has neither. **How to apply:** ...
+   These are recorded project facts. If the request contradicts one, say so before acting.
+   ```
+
+   Two limits worth knowing now. Retrieval is keyword scoring, not embeddings: a prompt asking about
+   "our data store" will not match a fact titled "PostgreSQL 16 …" unless one of those words appears
+   in the title, tags or body. And the hook is deliberately conservative — it injects at most five
+   facts, only those scoring 3 or above, and only for prompts longer than 12 characters. Anything
+   below that threshold is left to the agent to fetch with `memory_search`.
+
+   You can reproduce the same search from the shell:
+
+   ```bash
+   foundry memory search database
+   ```
+
+   ```
+   fact-0001  [decision/high]  PostgreSQL 16 is the only supported database
+   ```
+
+5. ### Watch a gate fire
+
+   Ask Claude to write a config file with a credential in it. A database URL carrying an inline
+   password is the most realistic version for this stack:
+
+   ```
+   Set spring.datasource.url in src/main/resources/application-dev.yml to
+   postgresql://acme:s3cr3t-p4ssw0rd@db.internal:5432/acme
+   ```
+
+   The `PreToolUse` hook inspects the write before it happens and denies it:
+
+   ```
+   Foundry blocked this write: it contains what looks like a database URL with inline password.
+   Move the value to an environment variable or a secret manager and reference it by name.
+   If this is a placeholder, make it obviously fake (e.g. "REDACTED") or use a .example file.
+   ```
+
+   Nothing was written. The block is recorded as one line in `.foundry/metrics/events.jsonl`.
+
+   <Aside type="caution" title="The AWS documentation keys will not work as a demo">
+   `AKIAIOSFODNN7EXAMPLE`, `AKIAI44QH8DHBEXAMPLE` and AWS's matching example secret key are
+   allowlisted by value in `guard-write.mjs`, precisely so this gate can be written about. Trying
+   the demo with one of them produces no block at all — which looks like a broken installation and
+   is not. Any other `AKIA…` key does fire the gate.
+   </Aside>
+
+   The Bash gates work the same way and, unlike the secret scan, name the rule and the override:
+
+   ```
+   Foundry gate `git-push-force` blocked this command.
+   Force push rewrites shared history. Use --force-with-lease, and never on the default branch.
+
+   If it is genuinely required, add an override to `.foundry/overrides.json`:
+   {"overrides":[{"gate":"git-push-force","reason":"<why>","expires":"<YYYY-MM-DD>"}]}
+   ```
+
+   <Aside type="note">
+   The secret detectors have no override path in the code — they deny at enforcement `gate` and
+   `warn` alike. Files ending `.example`, `.sample` or `.template` are exempt from the scan, as are
+   the three AWS documentation example values noted above. Full matrix in
+   [Gates](/foundry/en/concepts/gates/).
+   </Aside>
+
+6. ### Read the token report
+
+   ```bash
+   foundry tokens
+   ```
+
+   ```
+   Foundry token accounting
+
+     memory index (always loaded)   ~142 tokens  (budget 4000)
+     facts, retrieved on demand     ~860 tokens across 9 facts
+     runbooks, retrieved on demand  ~0 tokens
+     blackboard artifacts           ~0 tokens (never loaded wholesale)
+
+     eager loading would cost       ~860 tokens per session
+     index-first costs              ~142 tokens per session
+     saving                         ~718 tokens per session (83%)
+
+   Estimates use ~4 characters per token. For billed usage see /cost and /usage.
+   ```
+
+   With nine facts the absolute saving is small; the ratio is what matters, and the absolute number
+   grows with memory while the index stays capped. The same figures are available in-session through
+   the `token_report` tool of the `foundry` MCP server.
+
+   These are estimates from a character count, not a tokenizer. Use them for budgets and for
+   comparing two configurations, never as a billing figure — `/cost` and `/usage` are the billing
+   figures.
+
+7. ### Confirm the state is healthy
+
+   ```bash
+   foundry doctor
+   ```
+
+   Eleven checks, exit code `1` if any fails. Read
+   [Install](/foundry/en/start/installation/#when-a-step-fails) for what each failure means.
+
+</Steps>
+
+## What to read next
+
+- [Profiles](/foundry/en/start/profiles/) — pick the plugin set and enforcement level for this kind
+  of project instead of assembling them by hand.
+- [Memory](/foundry/en/concepts/memory/) — the four tiers, deduplication, supersedes chains, and why
+  facts expire rather than getting deleted.
+- [Gates](/foundry/en/concepts/gates/) — every gate, what it blocks, and the documented way past it.

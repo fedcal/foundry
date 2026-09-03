@@ -1,0 +1,113 @@
+# Rolling update - the correct default.
+# Every <PLACEHOLDER> comes from a measurement. See SKILL.md step 3.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: <NAME>
+  namespace: <NS>
+spec:
+  # No `replicas:` field when an HPA owns the count under GitOps - the controller
+  # would revert the autoscaler's decision on every sync, and you would see the
+  # service "randomly" drop back to its manifest value under load.
+  revisionHistoryLimit: 10        # how far back `rollout undo` can go. 0 or 1 removes your rollback.
+  progressDeadlineSeconds: <WORST-SUCCESSFUL-ROLLOUT-SECONDS-X2>  # a stall must FAIL, not hang
+  minReadySeconds: <SECONDS>      # Ready-then-degraded pods are caught before the next batch
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1                 # extra pods allowed above the desired count
+      maxUnavailable: 0           # never dip below capacity; needs spare room in the cluster
+  selector:
+    matchLabels: { app: <NAME> }
+  template:
+    metadata:
+      labels:
+        app: <NAME>
+        version: <VERSION>        # REQUIRED on metrics too, or per-version analysis is impossible
+      annotations:
+        # Config content hashed into the pod template. Without this a ConfigMap
+        # change does not restart pods, and `rollout undo` ships the old image
+        # against the new config - a combination nobody has ever tested.
+        checksum/config: "<SHA256-OF-RENDERED-CONFIGMAP>"
+    spec:
+      terminationGracePeriodSeconds: <PRESTOP + LONGEST-REQUEST + MARGIN>
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001          # NUMERIC: the kubelet cannot resolve a username from the image
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile: { type: RuntimeDefault }
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          # DoNotSchedule is a HARD constraint: during a zone outage pods stay
+          # Pending, exactly when you want to scale. Choose deliberately.
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector: { matchLabels: { app: <NAME> } }
+          matchLabelKeys: [pod-template-hash]   # spread the NEW ReplicaSet on its own merits
+      containers:
+        - name: <CONTAINER>
+          # Digest, not tag. Tags are mutable; the digest is the artefact's identity.
+          image: <REGISTRY>/<IMAGE>@sha256:<DIGEST>
+          ports:
+            - containerPort: 8080
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+          resources:
+            requests:
+              cpu: <P95-OF-STEADY-STATE>      # scheduling value, from measurement
+              memory: <PEAK-WORKING-SET-X1.2>
+            limits:
+              # limits.memory == requests.memory -> QoS Guaranteed, deterministic OOM behaviour.
+              memory: <PEAK-WORKING-SET-X1.2>
+              # cpu deliberately omitted: a CPU limit is CFS quota over a 100ms period and adds
+              # tail latency even on an idle node. Set one only for a hard tenancy boundary, and
+              # then prove container_cpu_cfs_throttled_seconds_total stays under 5%.
+          # Slow starts belong here, NOT in a long initialDelaySeconds on liveness.
+          # While this probe runs, a slow boot cannot be killed.
+          startupProbe:
+            httpGet: { path: /health/startup, port: 8080 }
+            periodSeconds: 5
+            failureThreshold: <WORST-COLD-START-SECONDS / 5>
+          # "Should this pod receive traffic right now?" Failing removes it from
+          # endpoints; it does NOT restart the container.
+          readinessProbe:
+            httpGet: { path: /health/ready, port: 8080 }
+            periodSeconds: 5
+            timeoutSeconds: <ABOVE-PROBE-P99>
+            failureThreshold: 3
+          # "Is it wedged beyond recovery?" Failing KILLS the container.
+          # It must make ZERO calls to dependencies: a database hiccup would
+          # restart every replica at once and keep the database down.
+          # If the service never wedges, omit this probe entirely.
+          livenessProbe:
+            httpGet: { path: /health/live, port: 8080 }
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              # Endpoint removal and SIGTERM happen in PARALLEL. This delay covers
+              # endpoint propagation to every kube-proxy, ingress and sidecar.
+              # Measure it:  kubectl get endpointslices -w  while deleting a pod.
+              exec: { command: ["sleep", "<MEASURED-PROPAGATION-SECONDS>"] }
+          volumeMounts:
+            - { name: tmp, mountPath: /tmp }   # required by readOnlyRootFilesystem
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: <NAME>
+  namespace: <NS>
+spec:
+  # maxUnavailable, not minAvailable: it stays correct when the replica count changes.
+  # `minAvailable: 2` on a Deployment later scaled to 2 blocks every node drain forever.
+  # With replicas: 1, ANY PDB deadlocks drains - either add a replica or drop the PDB.
+  maxUnavailable: 1
+  selector:
+    matchLabels: { app: <NAME> }

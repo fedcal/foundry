@@ -1,0 +1,89 @@
+# Local development stack.
+#
+# Two rules make this file worth having:
+#  1. The application builds the SAME Dockerfile as production, targeting a `dev`
+#     stage. A second Dockerfile for development is how "works on my machine" is
+#     manufactured.
+#  2. Dependencies are pinned by digest and gated by healthchecks, so `up` never
+#     races and everyone gets the same versions.
+#
+# Resolve every <PLACEHOLDER>:
+#   docker buildx imagetools inspect <IMAGE>:<TAG> --format '{{ .Manifest.Digest }}'
+#
+# Verify before handing over:  docker compose config
+
+name: <PROJECT-NAME>
+
+services:
+  app:
+    build:
+      context: .
+      target: dev              # the dev stage of the production Dockerfile
+    # No secrets in this file. .env.local is gitignored; .env.example is committed.
+    env_file:
+      - .env.local
+    environment:
+      # Service names resolve over the compose network; localhost does not.
+      DATABASE_URL: postgres://<DB-USER>:<DB-PASSWORD>@db:5432/<DB-NAME>
+      REDIS_URL: redis://cache:6379
+    ports:
+      - "<HOST-PORT>:<CONTAINER-PORT>"
+    volumes:
+      - .:/app                 # source bind mount for hot reload
+      # Anonymous volume shadowing the host dependency tree. Without this line the
+      # bind mount above hides the container's dependencies and, worse, a host
+      # tree built for a different OS/arch silently replaces the container's.
+      - /app/node_modules
+    depends_on:
+      db:
+        condition: service_healthy
+      cache:
+        condition: service_healthy
+    # Compose DOES honour a HEALTHCHECK (Kubernetes does not). Use it here.
+    healthcheck:
+      test: ["CMD", "<HEALTH-COMMAND>"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: <START-PERIOD>s   # grace window while the app boots; failures here do not count
+    restart: unless-stopped
+
+  db:
+    image: <DB-IMAGE>:<TAG>@sha256:<DIGEST>
+    environment:
+      POSTGRES_USER: <DB-USER>
+      POSTGRES_PASSWORD: <DB-PASSWORD>   # local-only value, never reused anywhere else
+      POSTGRES_DB: <DB-NAME>
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      # Seed and migration scripts run once, on an empty data volume only.
+      - ./scripts/dev-seed.sql:/docker-entrypoint-initdb.d/10-seed.sql:ro
+    healthcheck:
+      # -U and -d matter: the default pg_isready check passes before the
+      # application's own database exists, and then the app starts too early.
+      test: ["CMD-SHELL", "pg_isready -U <DB-USER> -d <DB-NAME>"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    # Not published to the host by default: nothing outside the compose network
+    # should reach the development database. Uncomment only when you need a GUI.
+    # ports: ["5432:5432"]
+
+  cache:
+    image: <CACHE-IMAGE>:<TAG>@sha256:<DIGEST>
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  db-data:      # named volume: survives `down`, removed by `down -v`
+
+# Useful commands
+#   docker compose up --build --wait      # --wait blocks until healthchecks pass
+#   docker compose logs -f app
+#   docker compose down -v                # DESTROYS the database volume
+#   docker compose exec db psql -U <DB-USER> -d <DB-NAME>

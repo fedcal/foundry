@@ -1,0 +1,25 @@
+{
+  "id": "oss-library",
+  "name": "Open source library",
+  "description": "A public library or tool: governance, documentation, semantic versioning, contributor workflow.",
+  "plugins": ["foundry-core", "foundry-oss", "foundry-research", "foundry-quality", "foundry-dev"],
+  "foundryConfig": {
+    "enforcement": "gate",
+    "indexTokenBudget": 3000,
+    "protectedPaths": [".github/workflows/**", "**/*.lock", "package-lock.json", "LICENSE", "NOTICE"]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(npm run:*)", "Bash(npm test:*)", "Bash(npx:*)", "Bash(gh issue:*)", "Bash(gh pr:*)",
+      "Bash(git status:*)", "Bash(git diff:*)", "Bash(git log:*)", "Read(**)", "Glob(**)", "Grep(**)"
+    ],
+    "ask": ["Bash(npm publish:*)", "Bash(gh release:*)", "Bash(git push:*)", "Bash(git tag:*)"],
+    "deny": ["Read(./.env)", "Read(./.env.*)"],
+    "defaultMode": "default"
+  },
+  "recommendedMcpServers": ["foundry", "filesystem", "git", "github"],
+  "notes": [
+    "Publishing and tagging always ask: a released version cannot be unreleased.",
+    "LICENSE and NOTICE are protected — changing them has legal consequences for every downstream user."
+  ]
+}

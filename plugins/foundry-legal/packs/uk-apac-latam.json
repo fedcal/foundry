@@ -1,0 +1,552 @@
+{
+  "pack": {
+    "id": "uk-apac-latam",
+    "name": "United Kingdom, Asia-Pacific and Latin America",
+    "scope": "Data protection and adjacent regimes outside the EU and North America that most often reach a product with international users: UK GDPR with the Data Protection Act 2018 and PECR, Brazil's LGPD, India's Digital Personal Data Protection Act, Japan's APPI, Australia's Privacy Act with the Australian Privacy Principles, and China's PIPL read with the Cybersecurity and Data Security Laws. Split this pack per country if your organisation operates seriously in one of them: a single file is a triage tool, not a country programme. This pack deliberately excludes: sector regulators in each jurisdiction, content and platform regulation, localisation rules beyond personal data, licensing and market-entry requirements, employment law, and every jurisdiction not named above.",
+    "lastReviewed": null,
+    "sources": [
+      {
+        "instrument": "UK Data Protection Act 2018",
+        "url": "https://www.legislation.gov.uk/ukpga/2018/12/contents",
+        "checkedOn": "2026-08-27"
+      },
+      {
+        "instrument": "ICO — UK GDPR guidance",
+        "url": "https://ico.org.uk/for-organisations/",
+        "checkedOn": "2026-08-27"
+      },
+      {
+        "instrument": "ANPD — LGPD (Brazil)",
+        "url": "https://www.gov.br/anpd/pt-br",
+        "checkedOn": "2026-08-27"
+      },
+      {
+        "instrument": "OAIC — Privacy Act (Australia)",
+        "url": "https://www.oaic.gov.au/privacy",
+        "checkedOn": "2026-08-27"
+      },
+      {
+        "instrument": "PPC — APPI (Japan)",
+        "url": "https://www.ppc.go.jp/en/",
+        "checkedOn": "2026-08-27"
+      }
+    ],
+    "verificationRequired": "Automated technical assessment. Not legal advice. Several instruments in this pack were recently enacted or are still being implemented through subordinate rules, and their operative detail is therefore unstable. lastReviewed is null: no citation here has been confirmed against an official text, and no threshold, deadline or penalty figure is asserted. Controls flagged unverifiedCitation carry a citation not checked at article level. Confirm every control against the current official text in the relevant language and have qualified local counsel confirm anything consequential."
+  },
+  "controls": [
+    {
+      "controlId": "uk-gdpr-core",
+      "theme": "privacy",
+      "instrument": "UK GDPR read with the Data Protection Act 2018",
+      "requirement": "The UK regime mirrors the EU structure — principles, lawful basis, transparency, data subject rights, accountability records, security and breach reporting to the ICO — but diverges in national derogations, exemptions and subsequent reform legislation, so an EU-only assessment is not sufficient.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal",
+          "markets.uk"
+        ]
+      },
+      "evidenceHints": [
+        "doc: whether the privacy documentation names the ICO and the UK regime, or only the EU one",
+        "doc: a UK representative where the organisation has no UK establishment",
+        "ask: which DPA 2018 exemptions the organisation relies on, if any"
+      ],
+      "severity": "high"
+    },
+    {
+      "controlId": "uk-gdpr-reform",
+      "theme": "privacy",
+      "instrument": "United Kingdom — data protection reform legislation amending the UK GDPR and DPA 2018",
+      "requirement": "The UK has legislated changes to its data protection framework affecting, among other things, records of processing, the handling of data subject requests, automated decision-making and research provisions. Confirm which amendments are in force and from what date before relying on any relaxation.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal",
+          "markets.uk"
+        ]
+      },
+      "evidenceHints": [
+        "doc: which version of the UK regime the compliance documentation was written against, and when",
+        "ask: has anyone reviewed the documentation since the reform legislation",
+        "doc: ICO guidance current at the date of the assessment"
+      ],
+      "severity": "medium",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "uk-pecr-cookies",
+      "theme": "privacy",
+      "instrument": "United Kingdom — Privacy and Electronic Communications Regulations (PECR)",
+      "requirement": "Storing or accessing information on a user's device requires consent unless strictly necessary for a service the user requested, and electronic marketing by email, SMS or telephone is separately regulated with its own consent and soft opt-in rules.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.uk"
+        ],
+        "anyOf": [
+          "product.web-ui",
+          "product.mobile-app",
+          "product.marketing-email"
+        ]
+      },
+      "evidenceHints": [
+        "cmd: clean-profile load of the site, listing everything written before any interaction",
+        "code: the marketing consent record, including the source and date of each consent",
+        "code: whether the soft opt-in conditions are actually met for existing customers"
+      ],
+      "severity": "high",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "uk-international-transfers",
+      "theme": "privacy",
+      "instrument": "United Kingdom — restricted transfers, the International Data Transfer Agreement and the UK Addendum",
+      "requirement": "Transfers of personal data out of the UK require UK adequacy regulations, an appropriate safeguard such as the IDTA or the UK Addendum to the EU SCCs together with a transfer risk assessment, or an exception. EU SCCs alone do not cover a UK transfer.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal",
+          "markets.uk"
+        ],
+        "anyOf": [
+          "transfers.outside-eea",
+          "transfers.to-us",
+          "deployment.multi-region"
+        ]
+      },
+      "evidenceHints": [
+        "doc: whether vendor contracts include the UK Addendum, not only the EU SCCs",
+        "config: the actual regions of production data stores and log sinks",
+        "doc: the transfer risk assessment per destination country"
+      ],
+      "severity": "high",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "uk-public-sector-accessibility",
+      "theme": "accessibility",
+      "instrument": "United Kingdom — Public Sector Bodies (Websites and Mobile Applications) (No. 2) Accessibility Regulations 2018",
+      "requirement": "Public sector bodies must meet the accessibility requirement for their websites and mobile applications and publish and maintain an accessibility statement in the prescribed form, including known non-accessible content and the reasons.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.uk"
+        ],
+        "anyOf": [
+          "org.public-body",
+          "users.public-sector"
+        ]
+      },
+      "evidenceHints": [
+        "doc: the accessibility statement in the required model form, with its review date",
+        "cmd: an audit result covering the level referenced by the regulations",
+        "doc: the disproportionate burden assessment, if one is claimed"
+      ],
+      "severity": "high"
+    },
+    {
+      "controlId": "br-lgpd-legal-bases",
+      "theme": "privacy",
+      "instrument": "Brazil — Lei Geral de Proteção de Dados Pessoais (Lei 13.709/2018)",
+      "requirement": "Every processing operation rests on one of the legal bases enumerated in the LGPD, which differ from the GDPR list, with a separate and narrower list for sensitive personal data. The basis is determined and recorded before processing.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal",
+          "markets.brazil"
+        ]
+      },
+      "evidenceHints": [
+        "doc: a purpose-to-basis mapping written against the LGPD list, not copied from a GDPR mapping",
+        "code: processing of sensitive personal data as the LGPD defines it",
+        "doc: the Portuguese-language privacy notice"
+      ],
+      "severity": "high"
+    },
+    {
+      "controlId": "br-lgpd-rights-and-dpo",
+      "theme": "privacy",
+      "instrument": "Brazil — LGPD data subject rights and the encarregado (data protection officer)",
+      "requirement": "Data subjects have rights including confirmation, access, correction, anonymisation or deletion of unnecessary data, portability, information about sharing, and review of decisions taken solely on automated processing. An encarregado is appointed and their identity and contact details are publicly disclosed.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal",
+          "markets.brazil"
+        ]
+      },
+      "evidenceHints": [
+        "doc: the encarregado's contact details published on the site",
+        "code: the request intake channel and the implemented rights",
+        "code: the review path for solely automated decisions"
+      ],
+      "severity": "high",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "br-lgpd-security-and-incidents",
+      "theme": "resilience",
+      "instrument": "Brazil — LGPD security measures, incident communication and ANPD supervision",
+      "requirement": "Technical and administrative security measures proportionate to the risk are adopted, and security incidents that may create relevant risk or damage are communicated to the ANPD and to affected data subjects within the period the authority sets.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal",
+          "markets.brazil"
+        ]
+      },
+      "evidenceHints": [
+        "doc: an incident procedure that names the ANPD and its notification route",
+        "doc: the risk threshold used to decide whether an incident is communicable",
+        "doc: a record of processing operations, which the ANPD may require"
+      ],
+      "severity": "high",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "br-lgpd-transfers",
+      "theme": "privacy",
+      "instrument": "Brazil — LGPD international transfer of personal data",
+      "requirement": "International transfers are permitted only on the grounds the LGPD lists, including adequacy recognised by the ANPD, standard contractual clauses approved by the ANPD, specific contractual clauses, global corporate rules, or specific consent for the transfer.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal",
+          "markets.brazil"
+        ]
+      },
+      "evidenceHints": [
+        "config: whether Brazilian personal data leaves Brazil, and to which countries",
+        "doc: the transfer instrument relied on, checked against the ANPD-approved forms",
+        "ask: are the EU SCCs being used on the assumption they suffice for Brazil"
+      ],
+      "severity": "high",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "in-dpdp-notice-consent",
+      "theme": "privacy",
+      "instrument": "India — Digital Personal Data Protection Act, 2023 and its implementing rules",
+      "requirement": "Personal data is processed for a lawful purpose on the basis of consent given after an itemised notice, or on a legitimate use the Act recognises. The notice must describe the personal data, the purpose, the manner of exercising rights and of complaining to the Board, and must be available in the languages the Act specifies.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal",
+          "markets.india"
+        ]
+      },
+      "evidenceHints": [
+        "code: the consent capture flow and whether the notice is itemised per purpose",
+        "doc: language availability of the notice",
+        "code: the withdrawal mechanism, which must be as easy as giving consent"
+      ],
+      "severity": "high",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "in-dpdp-fiduciary-duties",
+      "theme": "privacy",
+      "instrument": "India — DPDP Act obligations of a Data Fiduciary, including Significant Data Fiduciary duties",
+      "requirement": "Data Fiduciaries must ensure accuracy and completeness where the data is used to make a decision or is disclosed, implement reasonable security safeguards, erase data when the purpose is served or consent is withdrawn, and provide a grievance redressal mechanism. Entities designated as Significant Data Fiduciaries face additional duties including a data protection officer in India, independent audit and data protection impact assessment.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal",
+          "markets.india"
+        ]
+      },
+      "evidenceHints": [
+        "code: an erasure routine tied to withdrawal of consent and to purpose completion",
+        "doc: the grievance redressal contact and its response time",
+        "ask: has the organisation assessed whether it may be designated a Significant Data Fiduciary"
+      ],
+      "severity": "high",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "in-dpdp-children",
+      "theme": "privacy",
+      "instrument": "India — DPDP Act processing of personal data of children",
+      "requirement": "Processing children's personal data requires verifiable consent of a parent or lawful guardian, and tracking, behavioural monitoring and targeted advertising directed at children are restricted.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.india"
+        ],
+        "anyOf": [
+          "data.children",
+          "users.minors"
+        ]
+      },
+      "evidenceHints": [
+        "code: age determination and the verifiable parental consent mechanism",
+        "code: whether behavioural tracking is disabled for accounts identified as children",
+        "doc: the exemptions the organisation relies on, if any"
+      ],
+      "severity": "high",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "in-dpdp-breach",
+      "theme": "resilience",
+      "instrument": "India — DPDP Act personal data breach intimation",
+      "requirement": "In the event of a personal data breach, the Data Fiduciary must give intimation to the Data Protection Board and to each affected Data Principal, in the form and manner the rules prescribe.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal",
+          "markets.india"
+        ]
+      },
+      "evidenceHints": [
+        "doc: an incident procedure covering intimation to the Board and to individuals",
+        "code: whether the system can enumerate affected Data Principals",
+        "ask: is there a materiality threshold, or must every breach be intimated"
+      ],
+      "severity": "high",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "jp-appi-purpose-and-consent",
+      "theme": "privacy",
+      "instrument": "Japan — Act on the Protection of Personal Information (APPI)",
+      "requirement": "The purpose of use is specified and notified or publicly announced, use beyond that purpose requires consent, and personal data must be kept accurate and deleted without delay when no longer needed. Special care-required personal information requires prior consent to acquire.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal",
+          "markets.japan"
+        ]
+      },
+      "evidenceHints": [
+        "doc: a Japanese-language statement of the purpose of use",
+        "code: any secondary use of data for analytics or model training beyond the announced purpose",
+        "code: special care-required categories and the consent obtained to acquire them"
+      ],
+      "severity": "high",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "jp-appi-third-party-and-transfers",
+      "theme": "privacy",
+      "instrument": "Japan — APPI provision to third parties and cross-border transfer",
+      "requirement": "Provision of personal data to a third party generally requires the individual's prior consent, with record-keeping duties on both provider and recipient. Transfer to a recipient in a foreign country requires consent based on information about that country's regime, or an equivalent-standard arrangement with ongoing verification.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal",
+          "markets.japan"
+        ]
+      },
+      "evidenceHints": [
+        "config: which vendors outside Japan receive Japanese personal data",
+        "doc: the information about the destination country given to individuals before consent",
+        "doc: the records of provision and receipt required by the Act"
+      ],
+      "severity": "high",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "jp-appi-incident-report",
+      "theme": "resilience",
+      "instrument": "Japan — APPI reporting of leakage and notification to individuals",
+      "requirement": "Leakage, loss or damage of personal data in the situations the Act designates must be reported to the Personal Information Protection Commission and notified to affected individuals, in the manner and within the periods prescribed.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal",
+          "markets.japan"
+        ]
+      },
+      "evidenceHints": [
+        "doc: an incident procedure naming the PPC and the report route",
+        "doc: which incident categories trigger the duty",
+        "ask: who in the organisation can file in Japanese"
+      ],
+      "severity": "high",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "au-privacy-app-handling",
+      "theme": "privacy",
+      "instrument": "Australia — Privacy Act 1988 and the Australian Privacy Principles",
+      "requirement": "Entities must have a clearly expressed and up-to-date privacy policy, collect only what is reasonably necessary by lawful and fair means, notify individuals at collection, use and disclose only for the primary purpose or a permitted related purpose, keep information secure, and provide access and correction.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal",
+          "markets.australia"
+        ]
+      },
+      "evidenceHints": [
+        "doc: the APP privacy policy and the separate collection notice",
+        "code: whether direct marketing is separately controlled, as APP 7 requires",
+        "code: the access and correction path"
+      ],
+      "severity": "high"
+    },
+    {
+      "controlId": "au-privacy-cross-border",
+      "theme": "privacy",
+      "instrument": "Australia — Australian Privacy Principles, cross-border disclosure of personal information",
+      "requirement": "Before disclosing personal information to an overseas recipient, the entity must take reasonable steps to ensure the recipient does not breach the APPs, and generally remains accountable for the recipient's handling of that information.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal",
+          "markets.australia"
+        ],
+        "anyOf": [
+          "deployment.multi-region",
+          "transfers.outside-eea",
+          "transfers.to-us"
+        ]
+      },
+      "evidenceHints": [
+        "config: overseas hosting, support access and subprocessors",
+        "doc: contractual commitments binding overseas recipients to APP-equivalent handling",
+        "doc: disclosure of the countries of overseas recipients in the privacy policy"
+      ],
+      "severity": "high",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "au-notifiable-breaches",
+      "theme": "resilience",
+      "instrument": "Australia — Notifiable Data Breaches scheme under the Privacy Act 1988",
+      "requirement": "Where there are reasonable grounds to believe an eligible data breach has occurred, the entity must prepare a statement and notify the Information Commissioner and affected individuals as soon as practicable; suspected breaches must be assessed expeditiously within the prescribed period.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal",
+          "markets.australia"
+        ]
+      },
+      "evidenceHints": [
+        "doc: an incident procedure naming the OAIC and the assessment period",
+        "doc: the serious-harm assessment methodology",
+        "code: whether remedial action capable of preventing serious harm is technically possible"
+      ],
+      "severity": "high",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "au-privacy-reform-automated-decisions",
+      "theme": "ai",
+      "instrument": "Australia — Privacy Act amendments concerning transparency of automated decisions",
+      "requirement": "Amending legislation introduces a requirement to disclose in the privacy policy the kinds of personal information used in computer programs that make, or substantially and directly relate to making, decisions significantly affecting individuals. Confirm the commencement date and the exact trigger.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.australia"
+        ],
+        "anyOf": [
+          "product.ai-decisions-about-people",
+          "product.automated-employment-decisions",
+          "product.credit-scoring"
+        ]
+      },
+      "evidenceHints": [
+        "doc: whether the privacy policy describes automated decision-making at all",
+        "code: which fields feed the decision program",
+        "ask: is the decision significant in its effect on the individual"
+      ],
+      "severity": "medium",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "au-disability-discrimination-web",
+      "theme": "accessibility",
+      "instrument": "Australia — Disability Discrimination Act 1992 as applied to online services",
+      "requirement": "Providing goods, services or facilities online in a way that is not accessible to people with disability may amount to unlawful discrimination; conformance with a recognised WCAG level is the standard reference point used to demonstrate reasonable accessibility.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.australia"
+        ],
+        "anyOf": [
+          "product.web-ui",
+          "product.mobile-app"
+        ]
+      },
+      "evidenceHints": [
+        "cmd: audit result stating the conformance level achieved and its date",
+        "doc: an accessibility action plan, if one has been lodged",
+        "doc: any government procurement accessibility requirement that also applies"
+      ],
+      "severity": "medium",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "cn-pipl-consent-and-basis",
+      "theme": "privacy",
+      "instrument": "China — Personal Information Protection Law (PIPL)",
+      "requirement": "Processing personal information requires one of the bases the PIPL recognises, with consent as the primary route. Separate consent is required for specified situations including provision to other handlers, public disclosure, processing of sensitive personal information and cross-border provision.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal",
+          "markets.china"
+        ]
+      },
+      "evidenceHints": [
+        "code: whether consent is bundled or separately captured for each situation requiring separate consent",
+        "doc: the Chinese-language notice and what it discloses",
+        "code: sensitive personal information as the PIPL defines it, which is broader than intuition suggests"
+      ],
+      "severity": "critical",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "cn-pipl-cross-border",
+      "theme": "privacy",
+      "instrument": "China — PIPL cross-border provision of personal information",
+      "requirement": "Providing personal information outside China requires one of the prescribed mechanisms — a security assessment by the cyberspace authority, certification, or the standard contract filed with the authority — together with a personal information protection impact assessment and separate consent.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal",
+          "markets.china"
+        ]
+      },
+      "evidenceHints": [
+        "config: whether any Chinese personal information leaves China, including via logs, analytics and support tooling",
+        "doc: the mechanism relied on and evidence of the filing or assessment",
+        "doc: the personal information protection impact assessment"
+      ],
+      "severity": "critical",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "cn-pipl-impact-assessment",
+      "theme": "privacy",
+      "instrument": "China — PIPL personal information protection impact assessment",
+      "requirement": "An impact assessment must be carried out and its record retained for the situations the PIPL lists, including processing sensitive personal information, automated decision-making, entrusting processing to others, provision to other handlers and cross-border provision.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal",
+          "markets.china"
+        ]
+      },
+      "evidenceHints": [
+        "doc: the assessments carried out and their retention",
+        "code: automated decision-making features and the transparency and opt-out provided",
+        "ask: which of the listed situations apply to this product"
+      ],
+      "severity": "high",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "cn-data-security-classification",
+      "theme": "security",
+      "instrument": "China — Data Security Law and Cybersecurity Law",
+      "requirement": "Data is classified and graded, with heightened obligations for important data including risk assessments and, in defined cases, localisation. Network operators face multi-level protection scheme obligations. These regimes apply alongside the PIPL and are not limited to personal information.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.china"
+        ]
+      },
+      "evidenceHints": [
+        "doc: whether any data handled has been assessed as important data",
+        "config: localisation of storage for data subject to localisation requirements",
+        "ask: does the organisation operate a network in China, which triggers the network operator duties"
+      ],
+      "severity": "high",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "apac-latam-unlisted-jurisdictions",
+      "theme": "governance",
+      "instrument": "Jurisdictions not covered by any loaded pack",
+      "requirement": "Where users, employees or infrastructure exist in a jurisdiction for which no pack is loaded, the compliance position is unknown, not compliant. The gap must be recorded and either a pack added or the jurisdiction explicitly excluded from the assessment scope.",
+      "appliesWhen": {
+        "anyOf": [
+          "markets.other"
+        ]
+      },
+      "evidenceHints": [
+        "cmd: the geographic distribution of users, employees and infrastructure",
+        "doc: the stated scope of the assessment and the jurisdictions excluded from it",
+        "ask: which markets are actually being sold into, as opposed to reachable"
+      ],
+      "severity": "high"
+    }
+  ]
+}

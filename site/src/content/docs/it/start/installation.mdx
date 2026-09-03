@@ -1,0 +1,227 @@
+---
+title: Installare Foundry
+description: Requisiti, installazione dal marketplace, singoli plugin, profili e come leggere un foundry doctor che fallisce.
+sidebar:
+  order: 1
+---
+
+import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+
+Foundry si installa come marketplace di plugin per Claude Code. Non scarica nulla a runtime e non
+richiede mai `npm install`: il kernel usa soltanto la libreria standard di Node.
+
+## Requisiti
+
+| Requisito | Versione | Perché |
+|---|---|---|
+| Claude Code | **2.1.x** o successivo | Foundry usa `dependencies`, `workflows/`, le condizioni `if` degli hook e gli eventi `SubagentStop` e `WorktreeCreate`. Il contratto di authoring è verificato sulla 2.1.247. |
+| Node.js | **20+** | La CLI, il server MCP e tutti e dieci gli hook sono moduli ES che usano `node:fs`, `node:path`, `node:crypto` e `await` a livello di modulo. |
+| git | facoltativo | L'hook `SessionStart` riporta branch, numero di file modificati e ultimo commit. Senza git salta quel blocco senza segnalare nulla. |
+| [superpowers](https://github.com/obra/superpowers) | facoltativo | Foundry gli delega disciplina TDD, debugging sistematico e verifica del completamento invece di reimplementarli, e ripiega su una checklist ridotta quando non è presente. |
+
+<Aside type="caution" title="Node 20 è un limite rigido">
+Su Node 18 il kernel non viene nemmeno interpretato. Se `foundry` termina subito con un errore di
+sintassi, controlla `node --version` prima di ogni altra cosa.
+</Aside>
+
+## Installare il marketplace
+
+<Steps>
+
+1. Aggiungi il marketplace, da dentro una sessione di Claude Code:
+
+   ```bash
+   /plugin marketplace add fedcal/foundry
+   ```
+
+2. Installa il kernel. Ogni altro plugin dichiara una dipendenza da esso, quindi non è facoltativo:
+
+   ```bash
+   /plugin install foundry-core@foundry
+   ```
+
+   `foundry-core` ha `defaultEnabled: true`; i nove verticali hanno `defaultEnabled: false` e vanno
+   abilitati deliberatamente.
+
+3. Riavvia Claude Code, oppure esegui `/reload-plugins`, perché hook, server MCP e directory `bin/`
+   vengano rilevati.
+
+</Steps>
+
+## Installare i singoli plugin
+
+Aggiungi solo i verticali che servono. Ognuno dichiara
+`dependencies: [{ "name": "foundry-core" }]`, quindi installarne uno da solo tira comunque dentro
+il kernel.
+
+```bash
+/plugin install foundry-research@foundry    # ricerca di dominio, valutazione tecnologica, documentazione
+/plugin install foundry-dev@foundry         # architettura, protocolli, sicurezza, UX/a11y, Angular, Spring, dati
+/plugin install foundry-quality@foundry     # strategia di test, contract ed E2E, performance, observability, SRE
+/plugin install foundry-ai@foundry          # pipeline RAG, valutazione LLM, architettura di agenti, prompt engineering
+/plugin install foundry-data@foundry        # analisi esplorativa, baseline, valutazione di modelli, MLOps
+/plugin install foundry-ops@foundry         # GitHub Actions, container, Kubernetes, Terraform, rilasci
+/plugin install foundry-pmo@foundry         # roadmap, backlog, requisiti, rischi, operazioni su GitHub
+/plugin install foundry-economics@foundry   # ingegneria dei costi, FinOps, spesa AI, business case, finanziamenti
+/plugin install foundry-legal@foundry       # motore di compliance più i pacchetti di giurisdizione
+/plugin install foundry-growth@foundry      # posizionamento, lancio, pubblico, finanziatori, reputazione, collaboratori
+/plugin install foundry-oss@foundry         # governance, processo RFC, triage, versionamento semantico, advisory
+```
+
+Le descrizioni di agenti e skill di ogni plugin installato restano residenti perché Claude possa
+instradare le richieste. Dodici plugin sono un costo fisso modesto ma reale: una volta capito che
+cosa usi davvero, installa in modo stretto.
+
+## Oppure applicare un profilo
+
+Un profilo sceglie insieme l'insieme di plugin, le regole di permesso e il livello di enforcement.
+Ce ne sono cinque, descritti in [Profili](/foundry/it/start/profiles/).
+
+```bash
+foundry profile angular-spring-enterprise
+```
+
+Output:
+
+```
+Applied profile "angular-spring-enterprise".
+  plugins: foundry-core, foundry-dev, foundry-quality, foundry-ops, foundry-pmo, foundry-legal
+  settings: .claude/settings.json
+
+Restart Claude Code, or run /reload-plugins, for the change to take effect.
+```
+
+Il comando scrive `.claude/settings.json` e `.foundry/config.json`. **Non** scarica né installa
+nulla: registra quali plugin vanno abilitati e aggiunge il marketplace `foundry` a
+`extraKnownMarketplaces`, quindi il marketplace deve restare raggiungibile perché i plugin
+abilitati si carichino.
+
+## Eseguire il comando `foundry`
+
+`foundry-core` distribuisce `bin/foundry.mjs`. L'invocazione che funziona sempre è quella
+esplicita: chiamarlo con `node` e un percorso. Che funzioni anche un semplice `foundry` dipende
+dalla tua versione di Claude Code e dal fatto che metta sul PATH le directory `bin/` dei plugin —
+provalo, e ripiega sulla forma esplicita se la shell risponde `command not found`.
+
+<Tabs>
+  <TabItem label="Da un asset del plugin">
+
+Le skill di Foundry usano la variabile di sostituzione, che si risolve solo dentro asset forniti da
+un plugin (skill, hook, comandi):
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/bin/foundry.mjs" doctor
+```
+
+  </TabItem>
+  <TabItem label="Da un checkout del repository">
+
+```bash
+node plugins/foundry-core/bin/foundry.mjs doctor
+```
+
+  </TabItem>
+  <TabItem label="Se è sul PATH">
+
+```bash
+foundry doctor
+```
+
+  </TabItem>
+</Tabs>
+
+<Aside type="note">
+`plugin.json` non dichiara un campo `bin`: la directory viene rilevata per convenzione. Se
+`foundry: command not found` compare nel tuo terminale invece che in una sessione, è il
+comportamento atteso — usa una delle due forme esplicite qui sopra.
+</Aside>
+
+## Aggiornare i plugin installati
+
+Quando un plugin ha un aggiornamento disponibile, riscarica e applicalo in questo ordine:
+
+<Steps>
+
+1. Riscarica il marketplace per recuperare le ultime versioni:
+
+   ```bash
+   claude plugin marketplace update foundry
+   ```
+
+2. Elenca i tuoi plugin installati per confermare quali hanno bisogno di aggiornamento:
+
+   ```bash
+   claude plugin list
+   ```
+
+3. Aggiorna un singolo plugin. Ad esempio, per aggiornare `foundry-dev`:
+
+   ```bash
+   claude plugin update foundry-dev@foundry
+   ```
+
+   Puoi specificare uno scope con `--scope user|project|local|managed` se necessario. Il default
+   è sufficiente nella maggior parte dei casi.
+
+4. **Riavvia Claude Code** dopo l'aggiornamento, oppure esegui `/reload-plugins` in una sessione,
+   in modo che il codice aggiornato venga caricato. Un aggiornamento in una sessione in esecuzione
+   non ha effetto finché la sessione non si riavvia.
+
+5. Per rimuovere completamente un plugin, usa:
+
+   ```bash
+   claude plugin uninstall <plugin>@foundry
+   ```
+
+   Aggiungi `--keep-data` per preservare la directory dati del plugin se pensi di reinstallarlo
+   più tardi.
+
+</Steps>
+
+## Verificare con `foundry doctor`
+
+Eseguilo dalla radice del progetto, dopo `foundry init`. Esegue dieci controlli ed esce con codice
+`1` se anche uno solo fallisce.
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/bin/foundry.mjs" doctor   # oppure semplicemente: foundry doctor
+```
+
+```
+  ok   .foundry state directory exists
+         /home/me/acme-api/.foundry
+  ok   config.json present
+  ok   enforcement level is valid ("gate")
+  ok   9 active facts (0 expired or superseded)
+  ok   index within budget (~142/4000 tokens)
+  ok   no duplicate fact titles
+  ok   every decision and risk records its reasoning
+  ok   0 runbooks, all mutating ones document rollback
+  ok   no expired gate overrides still in the file
+  ok   every blackboard artifact validates against its contract
+
+All checks passed.
+```
+
+La quarta riga è informativa e passa sempre: esiste per mostrare a colpo d'occhio la divisione fra
+fatti attivi e fatti scaduti o superati.
+
+## Quando un passo fallisce
+
+| Che cosa vedi | Causa | Rimedio |
+|---|---|---|
+| `/plugin install` non risolve `foundry-core@foundry` | Il marketplace non è stato aggiunto, o è stato aggiunto con un altro nome | Riesegui `/plugin marketplace add fedcal/foundry` |
+| Gli hook non scattano mai, `/mcp` non elenca `foundry` | La sessione è iniziata prima dell'installazione del plugin | Riavvia Claude Code oppure esegui `/reload-plugins` |
+| `foundry: command not found` | La `bin/` del plugin non è sul PATH di questa shell | Chiama `node <radice-plugin>/bin/foundry.mjs` |
+| ` FAIL  .foundry state directory exists` | Il progetto non è mai stato inizializzato | Esegui `foundry init` |
+| ` FAIL  enforcement level is valid` | `.foundry/config.json` contiene un valore diverso da `gate`, `warn` o `off` | Correggi il valore: il kernel ripiega sui default interni solo quando il file non è proprio interpretabile |
+| ` FAIL  index within budget` | Più fatti di quanti il budget dell'indice ne ammetta | Consolida i fatti troppo stretti, o falli scadere; vedi `foundry memory prune`. Alzare `indexTokenBudget` tassa ogni sessione futura |
+| ` FAIL  every decision and risk records its reasoning` | Un fatto `decision` o `risk` non ha la riga `**Why:**` | Riscrivi il fatto con `memory_write`: il controllo cerca letteralmente quella stringa |
+| ` FAIL  no expired gate overrides still in the file` | `.foundry/overrides.json` contiene ancora una voce con `expires` passato | Elimina la voce. Vedi [Gate](/foundry/it/concepts/gates/) |
+| ` FAIL  every blackboard artifact validates against its contract` | Un artefatto sotto `.foundry/blackboard/` non soddisfa il suo schema | Esegui `foundry validate <id-schema> <file>` per vedere le violazioni riga per riga |
+| `No profiles directory found.` | `foundry profile` cerca `profiles/` tre livelli sopra `bin/`; il layout installato non la contiene | Esegui il comando da un checkout del repository Foundry |
+
+## Prossimo passo
+
+La [Guida rapida](/foundry/it/start/quickstart/) porta un progetto reale da `foundry init` fino a
+un gate che scatta, in circa dieci minuti.

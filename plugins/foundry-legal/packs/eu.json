@@ -1,0 +1,902 @@
+{
+  "pack": {
+    "id": "eu",
+    "name": "European Union",
+    "scope": "Union-level instruments that bite on a software product: GDPR and the ePrivacy rules on terminal-equipment access, the EU AI Act, NIS2, DORA, the Cyber Resilience Act, and the European Accessibility Act with EN 301 549. Applies where the organisation is established in the Union, offers goods or services to people in the Union, monitors their behaviour, or places a product on the Union market. This pack deliberately excludes: national transposition and national derogations (see it.json and any other national pack), sector supervisory guidance, competition law, the Data Act and Data Governance Act, the Digital Services Act and Digital Markets Act, product safety and CE marking outside the CRA, employment law, and tax.",
+    "lastReviewed": null,
+    "sources": [
+      {
+        "instrument": "GDPR — Regulation (EU) 2016/679",
+        "url": "https://eur-lex.europa.eu/eli/reg/2016/679/oj",
+        "checkedOn": "2026-08-27"
+      },
+      {
+        "instrument": "EU AI Act — Regulation (EU) 2024/1689",
+        "url": "https://eur-lex.europa.eu/eli/reg/2024/1689/oj",
+        "checkedOn": "2026-08-27"
+      },
+      {
+        "instrument": "NIS2 — Directive (EU) 2022/2555",
+        "url": "https://eur-lex.europa.eu/eli/dir/2022/2555/oj",
+        "checkedOn": "2026-08-27"
+      },
+      {
+        "instrument": "DORA — Regulation (EU) 2022/2554",
+        "url": "https://eur-lex.europa.eu/eli/reg/2022/2554/oj",
+        "checkedOn": "2026-08-27"
+      },
+      {
+        "instrument": "Cyber Resilience Act — Regulation (EU) 2024/2847",
+        "url": "https://eur-lex.europa.eu/eli/reg/2024/2847/oj",
+        "checkedOn": "2026-08-27"
+      },
+      {
+        "instrument": "European Accessibility Act — Directive (EU) 2019/882",
+        "url": "https://eur-lex.europa.eu/eli/dir/2019/882/oj",
+        "checkedOn": "2026-08-27"
+      },
+      {
+        "instrument": "ePrivacy — Directive 2002/58/EC",
+        "url": "https://eur-lex.europa.eu/eli/dir/2002/58/oj",
+        "checkedOn": "2026-08-27"
+      }
+    ],
+    "verificationRequired": "Automated technical assessment. Not legal advice. Union law changes, and several instruments in this pack phase in over multiple dates with different obligations for providers, deployers, importers and distributors. lastReviewed is null: no citation here has been confirmed against the Official Journal text. In this pack, therefore, the absence of unverifiedCitation is the weaker claim that the citation was checked at article level against the instrument at the URL in sources on that entry's checkedOn date — it is not the confirmation against the official text that PACK-FORMAT.md defines. Controls flagged unverifiedCitation carry a citation that has not been checked even at article level. Confirm every control against the consolidated official text and the applicable national transposition, and have a qualified lawyer or DPO confirm anything consequential."
+  },
+  "controls": [
+    {
+      "controlId": "eu-gdpr-5-principles",
+      "theme": "privacy",
+      "instrument": "GDPR (Regulation (EU) 2016/679) Art. 5 — principles relating to processing",
+      "requirement": "Processing is lawful, fair and transparent; limited to specified purposes; adequate, relevant and limited to what is necessary; accurate; kept no longer than necessary; and secure. The controller must be able to demonstrate compliance (accountability).",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal"
+        ],
+        "anyOf": [
+          "markets.eu",
+          "markets.it",
+          "org.employees-in-eu",
+          "deployment.eu"
+        ]
+      },
+      "evidenceHints": [
+        "code: every field persisted about a person, checked against a stated purpose",
+        "doc: a retention schedule that names a period per data category",
+        "ask: what document would you hand a supervisory authority to demonstrate accountability"
+      ],
+      "severity": "critical"
+    },
+    {
+      "controlId": "eu-gdpr-6-lawful-basis",
+      "theme": "privacy",
+      "instrument": "GDPR Art. 6 — lawfulness of processing",
+      "requirement": "Each processing purpose rests on an identified lawful basis, determined before processing begins, and the basis is recorded. Switching basis after the fact (for example from consent to legitimate interests) is not a remedy for a failed consent.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal"
+        ],
+        "anyOf": [
+          "markets.eu",
+          "markets.it",
+          "org.employees-in-eu",
+          "deployment.eu"
+        ]
+      },
+      "evidenceHints": [
+        "doc: a purpose-to-basis mapping table",
+        "code: feature flags or config that switch processing on without a corresponding basis",
+        "doc: a legitimate interests assessment where that basis is claimed"
+      ],
+      "severity": "critical"
+    },
+    {
+      "controlId": "eu-gdpr-7-consent",
+      "theme": "privacy",
+      "instrument": "GDPR Art. 7 — conditions for consent",
+      "requirement": "Where consent is the basis, it must be freely given, specific, informed and unambiguous, demonstrable, as easy to withdraw as to give, and not bundled with unrelated terms. Silence, pre-ticked boxes and inactivity do not constitute consent.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal"
+        ],
+        "anyOf": [
+          "markets.eu",
+          "markets.it",
+          "deployment.eu"
+        ]
+      },
+      "evidenceHints": [
+        "code: the consent capture component and what it stores (timestamp, version of the notice, scope)",
+        "code: the withdrawal path — count the clicks against the acceptance path",
+        "cmd: query the consent store for a sample user and reconstruct what they agreed to"
+      ],
+      "severity": "critical"
+    },
+    {
+      "controlId": "eu-gdpr-9-special-category",
+      "theme": "privacy",
+      "instrument": "GDPR Art. 9 — processing of special categories of personal data",
+      "requirement": "Processing of data revealing health, biometrics used for identification, racial or ethnic origin, political opinions, religious beliefs, trade union membership, genetics, sex life or sexual orientation is prohibited unless a specific exception applies, in addition to an Art. 6 basis.",
+      "appliesWhen": {
+        "anyOf": [
+          "data.special-category",
+          "data.health",
+          "data.biometric"
+        ]
+      },
+      "evidenceHints": [
+        "code: free-text fields that predictably attract health or belief data (support tickets, profile bios)",
+        "code: inference features that derive a special category from ordinary data",
+        "doc: the specific Art. 9 exception relied on, per purpose"
+      ],
+      "severity": "critical"
+    },
+    {
+      "controlId": "eu-gdpr-8-children",
+      "theme": "privacy",
+      "instrument": "GDPR Art. 8 — conditions applicable to child's consent in relation to information society services",
+      "requirement": "Where an information society service is offered directly to a child and relies on consent, consent must be given or authorised by the holder of parental responsibility below the applicable age threshold, which varies by Member State.",
+      "appliesWhen": {
+        "anyOf": [
+          "data.children",
+          "users.minors"
+        ]
+      },
+      "evidenceHints": [
+        "code: age gating or age assurance mechanism, if any",
+        "doc: which Member State age thresholds have been considered",
+        "ask: is the service in fact attractive to minors regardless of the stated audience"
+      ],
+      "severity": "high"
+    },
+    {
+      "controlId": "eu-gdpr-12-14-transparency",
+      "theme": "privacy",
+      "instrument": "GDPR Art. 12, 13 and 14 — transparency and information to data subjects",
+      "requirement": "Data subjects receive concise, intelligible information about identity of the controller, purposes and legal bases, recipients, transfers, retention, their rights and the right to complain — at collection, or within a defined period where data is obtained indirectly.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal"
+        ],
+        "anyOf": [
+          "markets.eu",
+          "markets.it",
+          "deployment.eu"
+        ]
+      },
+      "evidenceHints": [
+        "doc: the published privacy notice and its version history",
+        "code: whether the notice is actually surfaced at the collection point, not only in a footer",
+        "cmd: diff the notice against the real data inventory — the usual gap is undisclosed recipients"
+      ],
+      "severity": "high"
+    },
+    {
+      "controlId": "eu-gdpr-15-access",
+      "theme": "privacy",
+      "instrument": "GDPR Art. 15 — right of access",
+      "requirement": "On request the controller confirms whether personal data is processed and provides a copy of that data together with the supplementary information, within the statutory response period.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal"
+        ],
+        "anyOf": [
+          "markets.eu",
+          "markets.it",
+          "deployment.eu"
+        ]
+      },
+      "evidenceHints": [
+        "code: an implemented export path that covers every store, not only the primary database",
+        "doc: an intake channel and an internal SLA for requests",
+        "cmd: run the export for a test account and list which systems it missed (logs, analytics, CRM, backups)"
+      ],
+      "severity": "high"
+    },
+    {
+      "controlId": "eu-gdpr-16-18-21-rights",
+      "theme": "privacy",
+      "instrument": "GDPR Art. 16, 18 and 21 — rectification, restriction of processing, objection",
+      "requirement": "Data subjects can obtain rectification of inaccurate data, restriction of processing in defined circumstances, and can object to processing based on legitimate interests or public task, with an absolute right to object to direct marketing.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal"
+        ],
+        "anyOf": [
+          "markets.eu",
+          "markets.it",
+          "deployment.eu"
+        ]
+      },
+      "evidenceHints": [
+        "code: is there any technical state representing 'restricted' processing, or only delete and active",
+        "code: marketing suppression list and whether every send path consults it",
+        "doc: how objections are recorded and honoured downstream"
+      ],
+      "severity": "high"
+    },
+    {
+      "controlId": "eu-gdpr-17-erasure",
+      "theme": "privacy",
+      "instrument": "GDPR Art. 17 — right to erasure",
+      "requirement": "Where grounds apply, personal data is erased without undue delay, including by informing recipients and, where the data was made public, taking reasonable steps to inform other controllers. Retention on a legal ground must be justified, not assumed.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal"
+        ],
+        "anyOf": [
+          "markets.eu",
+          "markets.it",
+          "deployment.eu"
+        ]
+      },
+      "evidenceHints": [
+        "code: the deletion routine — check whether it is a soft delete flag and nothing more",
+        "code: propagation to search indexes, caches, queues, data warehouse, third-party processors",
+        "doc: the backup expiry policy and the stated position on erasure within backups"
+      ],
+      "severity": "critical"
+    },
+    {
+      "controlId": "eu-gdpr-20-portability",
+      "theme": "privacy",
+      "instrument": "GDPR Art. 20 — right to data portability",
+      "requirement": "Data provided by the data subject, processed by automated means on the basis of consent or contract, is provided in a structured, commonly used and machine-readable format, and transmitted to another controller where technically feasible.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal"
+        ],
+        "anyOf": [
+          "markets.eu",
+          "markets.it",
+          "deployment.eu"
+        ]
+      },
+      "evidenceHints": [
+        "code: the export format — a PDF is not machine-readable for this purpose",
+        "doc: which data is treated as 'provided by the data subject' versus derived",
+        "cmd: run the export and attempt to re-import it somewhere"
+      ],
+      "severity": "medium"
+    },
+    {
+      "controlId": "eu-gdpr-22-automated-decisions",
+      "theme": "privacy",
+      "instrument": "GDPR Art. 22 — automated individual decision-making, including profiling",
+      "requirement": "Decisions based solely on automated processing that produce legal effects or similarly significantly affect a person are restricted, and where permitted require safeguards including human intervention, the ability to express a view and to contest the decision.",
+      "appliesWhen": {
+        "anyOf": [
+          "product.ai-decisions-about-people",
+          "product.credit-scoring",
+          "product.automated-employment-decisions"
+        ]
+      },
+      "evidenceHints": [
+        "code: the decision pipeline — is there a human in the loop with real authority to override",
+        "doc: the meaningful information about the logic involved that is given to the person",
+        "code: an appeal or contest endpoint and where those appeals are recorded"
+      ],
+      "severity": "critical"
+    },
+    {
+      "controlId": "eu-gdpr-25-privacy-by-design",
+      "theme": "privacy",
+      "instrument": "GDPR Art. 25 — data protection by design and by default",
+      "requirement": "Appropriate technical and organisational measures are implemented at the time of determining the means of processing and at the time of processing, and by default only personal data necessary for each specific purpose is processed.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal"
+        ],
+        "anyOf": [
+          "markets.eu",
+          "markets.it",
+          "deployment.eu"
+        ]
+      },
+      "evidenceHints": [
+        "code: default settings on new accounts — defaults that share more than the minimum fail this control",
+        "code: pseudonymisation or separation of identifiers where the purpose allows",
+        "doc: evidence that data protection was considered before build, not after launch"
+      ],
+      "severity": "high"
+    },
+    {
+      "controlId": "eu-gdpr-28-processor",
+      "theme": "governance",
+      "instrument": "GDPR Art. 28 — processor obligations and data processing agreements",
+      "requirement": "Processing by a processor is governed by a contract covering subject matter, duration, nature and purpose, types of data, obligations of the parties, sub-processor authorisation, assistance with rights and security, and deletion or return at the end of the service.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal"
+        ],
+        "anyOf": [
+          "markets.eu",
+          "markets.it",
+          "org.processor",
+          "deployment.eu"
+        ]
+      },
+      "evidenceHints": [
+        "config: every third-party service in application and infrastructure config is a candidate processor",
+        "doc: signed DPAs and the current sub-processor list, with a change-notification mechanism",
+        "cmd: diff the deployed vendor list against the documented sub-processor list"
+      ],
+      "severity": "critical"
+    },
+    {
+      "controlId": "eu-gdpr-30-ropa",
+      "theme": "records",
+      "instrument": "GDPR Art. 30 — records of processing activities",
+      "requirement": "Controllers and processors maintain a record of processing activities covering purposes, categories of data subjects and personal data, recipients, third-country transfers, retention periods and a general description of security measures.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal"
+        ],
+        "anyOf": [
+          "markets.eu",
+          "markets.it",
+          "org.employees-in-eu",
+          "deployment.eu"
+        ]
+      },
+      "evidenceHints": [
+        "doc: the record itself, and its last update date",
+        "code: generate a candidate record from schema definitions and diff against the maintained one",
+        "ask: does the record cover employee and candidate data, not only customer data"
+      ],
+      "severity": "high"
+    },
+    {
+      "controlId": "eu-gdpr-32-security",
+      "theme": "security",
+      "instrument": "GDPR Art. 32 — security of processing",
+      "requirement": "Technical and organisational measures appropriate to the risk are implemented, including as appropriate pseudonymisation and encryption, confidentiality, integrity, availability and resilience, restoration after an incident, and a process for regularly testing and evaluating effectiveness.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal"
+        ],
+        "anyOf": [
+          "markets.eu",
+          "markets.it",
+          "org.employees-in-eu",
+          "deployment.eu"
+        ]
+      },
+      "evidenceHints": [
+        "config: encryption in transit and at rest, key management, access restrictions on production data",
+        "cmd: date of the last penetration test or security assessment and the state of its findings",
+        "cmd: date of the last successful restore test"
+      ],
+      "severity": "critical"
+    },
+    {
+      "controlId": "eu-gdpr-33-34-breach",
+      "theme": "resilience",
+      "instrument": "GDPR Art. 33 and 34 — notification of a personal data breach",
+      "requirement": "Personal data breaches are notified to the supervisory authority without undue delay and, where feasible, not later than 72 hours after becoming aware, unless unlikely to result in a risk; high-risk breaches are also communicated to affected data subjects. Processors notify their controller without undue delay.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal"
+        ],
+        "anyOf": [
+          "markets.eu",
+          "markets.it",
+          "org.employees-in-eu",
+          "deployment.eu"
+        ]
+      },
+      "evidenceHints": [
+        "doc: a breach procedure that names the supervisory authority, the internal decision-maker and the 72-hour clock start",
+        "doc: an internal breach register, including breaches assessed as not notifiable",
+        "code: detection capability sufficient to know a breach occurred at all"
+      ],
+      "severity": "critical"
+    },
+    {
+      "controlId": "eu-gdpr-35-dpia",
+      "theme": "privacy",
+      "instrument": "GDPR Art. 35 — data protection impact assessment",
+      "requirement": "Where processing is likely to result in a high risk, in particular using new technologies, systematic and extensive automated evaluation, large-scale special category processing or large-scale systematic monitoring of a publicly accessible area, a DPIA is carried out before processing begins.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal"
+        ],
+        "anyOf": [
+          "product.ai-decisions-about-people",
+          "data.special-category",
+          "data.biometric",
+          "data.health",
+          "data.children",
+          "product.ad-tech"
+        ]
+      },
+      "evidenceHints": [
+        "doc: DPIA documents and their dates relative to the feature launch dates",
+        "doc: the supervisory authority's list of processing requiring a DPIA for the relevant Member State",
+        "ask: was the DPO consulted, and is that consultation recorded"
+      ],
+      "severity": "high"
+    },
+    {
+      "controlId": "eu-gdpr-37-dpo",
+      "theme": "governance",
+      "instrument": "GDPR Art. 37 to 39 — designation, position and tasks of the data protection officer",
+      "requirement": "A DPO is designated where the core activities require regular and systematic monitoring of data subjects on a large scale, or large-scale processing of special categories, or where the controller is a public authority. The DPO's contact details are published and communicated to the supervisory authority.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal"
+        ],
+        "anyOf": [
+          "org.public-body",
+          "data.special-category",
+          "product.ad-tech"
+        ]
+      },
+      "evidenceHints": [
+        "doc: DPO contact details in the privacy notice",
+        "doc: evidence of notification to the supervisory authority",
+        "ask: does the DPO report to the highest management level and avoid conflicting duties"
+      ],
+      "severity": "medium"
+    },
+    {
+      "controlId": "eu-gdpr-44-49-transfers",
+      "theme": "privacy",
+      "instrument": "GDPR Chapter V (Art. 44 to 49) — transfers of personal data to third countries",
+      "requirement": "Transfers outside the EEA rest on an adequacy decision, appropriate safeguards such as Standard Contractual Clauses or binding corporate rules with a transfer impact assessment, or a derogation. Onward transfers by processors are covered by the same analysis.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal"
+        ],
+        "anyOf": [
+          "transfers.outside-eea",
+          "transfers.to-us",
+          "transfers.to-china",
+          "deployment.multi-region"
+        ]
+      },
+      "evidenceHints": [
+        "config: the actual regions of every data store, queue, log sink, CDN and analytics endpoint",
+        "doc: SCC modules executed per vendor, plus transfer impact assessments",
+        "ask: which support teams can access production data, and from which country"
+      ],
+      "severity": "critical"
+    },
+    {
+      "controlId": "eu-eprivacy-terminal-access",
+      "theme": "privacy",
+      "instrument": "ePrivacy Directive 2002/58/EC Art. 5(3) as transposed nationally — storing or accessing information on terminal equipment",
+      "requirement": "Storing information, or gaining access to information already stored, on a user's terminal equipment requires prior informed consent, except where strictly necessary to provide a service explicitly requested by the user. This covers cookies, local storage, SDK identifiers and device fingerprinting alike.",
+      "appliesWhen": {
+        "anyOf": [
+          "product.web-ui",
+          "product.mobile-app"
+        ]
+      },
+      "evidenceHints": [
+        "cmd: load the site with a clean profile and list everything written before any interaction",
+        "code: analytics, tag manager and SDK initialisation — check whether it is gated on consent",
+        "code: the reject path in the banner, and whether it is as prominent as accept"
+      ],
+      "severity": "critical"
+    },
+    {
+      "controlId": "eu-aiact-prohibited",
+      "theme": "ai",
+      "instrument": "EU AI Act (Regulation (EU) 2024/1689) Art. 5 — prohibited AI practices",
+      "requirement": "Certain practices are banned outright, including manipulative or exploitative techniques causing significant harm, social scoring, and specified uses of biometric categorisation and untargeted facial image scraping. Confirm the current list and its exceptions before relying on any of them.",
+      "appliesWhen": {
+        "anyOf": [
+          "product.ai-system",
+          "product.genai-feature",
+          "product.biometric-identification"
+        ]
+      },
+      "evidenceHints": [
+        "doc: the intended purpose statement, checked item by item against the prohibition list",
+        "code: any scoring of individuals across unrelated contexts",
+        "code: any biometric inference of sensitive attributes"
+      ],
+      "severity": "critical",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "eu-aiact-classification",
+      "theme": "ai",
+      "instrument": "EU AI Act (Regulation (EU) 2024/1689) — risk classification and role determination",
+      "requirement": "Determine and record whether the system is an AI system in scope, whether it is high-risk (including because it is a safety component or falls under the listed high-risk use cases), and whether the organisation acts as provider, deployer, importer or distributor. Obligations differ sharply by role.",
+      "appliesWhen": {
+        "anyOf": [
+          "product.ai-system",
+          "product.genai-feature"
+        ]
+      },
+      "evidenceHints": [
+        "doc: a written classification decision with reasoning, per AI system",
+        "doc: contracts with model vendors, which determine whether you are a provider or a deployer",
+        "ask: does substantial modification or rebranding of a third-party model make you the provider"
+      ],
+      "severity": "critical",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "eu-aiact-risk-management",
+      "theme": "ai",
+      "instrument": "EU AI Act (Regulation (EU) 2024/1689) — risk management system for high-risk AI",
+      "requirement": "Providers of high-risk AI systems establish, implement, document and maintain a continuous risk management system across the system lifecycle, identifying and mitigating reasonably foreseeable risks to health, safety and fundamental rights.",
+      "appliesWhen": {
+        "anyOf": [
+          "product.ai-decisions-about-people",
+          "product.automated-employment-decisions",
+          "product.credit-scoring",
+          "product.biometric-identification"
+        ]
+      },
+      "evidenceHints": [
+        "doc: the risk management file, with residual risk decisions and who accepted them",
+        "doc: evidence the file is updated when the model or the deployment context changes",
+        "code: mitigations actually present in the product, not only listed in the document"
+      ],
+      "severity": "critical",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "eu-aiact-data-governance",
+      "theme": "ai",
+      "instrument": "EU AI Act (Regulation (EU) 2024/1689) — data and data governance for high-risk AI",
+      "requirement": "Training, validation and testing data sets are subject to governance practices appropriate to the purpose, addressing provenance, design choices, relevance, representativeness, examination for bias, and identification of gaps or shortcomings.",
+      "appliesWhen": {
+        "anyOf": [
+          "product.ai-decisions-about-people",
+          "product.automated-employment-decisions",
+          "product.credit-scoring",
+          "product.biometric-identification"
+        ]
+      },
+      "evidenceHints": [
+        "doc: dataset documentation covering source, licence, collection method and known limitations",
+        "code: the data pipeline that builds training sets, and whether it is reproducible",
+        "doc: bias examination results, including the groups examined and those not examined"
+      ],
+      "severity": "critical",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "eu-aiact-technical-documentation",
+      "theme": "ai",
+      "instrument": "EU AI Act (Regulation (EU) 2024/1689) — technical documentation and record-keeping for high-risk AI",
+      "requirement": "Technical documentation demonstrating conformity is drawn up before placing on the market and kept up to date, and the system technically allows for automatic recording of events (logs) over its lifetime, with a defined retention period.",
+      "appliesWhen": {
+        "anyOf": [
+          "product.ai-decisions-about-people",
+          "product.automated-employment-decisions",
+          "product.credit-scoring",
+          "product.biometric-identification"
+        ]
+      },
+      "evidenceHints": [
+        "doc: a technical file, versioned alongside the model releases",
+        "code: logging of inputs, model version, output and any human override, with retention configured",
+        "cmd: reconstruct one past decision end to end from the logs alone"
+      ],
+      "severity": "high",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "eu-aiact-human-oversight",
+      "theme": "ai",
+      "instrument": "EU AI Act (Regulation (EU) 2024/1689) — human oversight, accuracy, robustness and cybersecurity for high-risk AI",
+      "requirement": "High-risk systems are designed so they can be effectively overseen by natural persons during use, including the ability to disregard, override or reverse the output and to stop the system, and achieve an appropriate level of accuracy, robustness and cybersecurity.",
+      "appliesWhen": {
+        "anyOf": [
+          "product.ai-decisions-about-people",
+          "product.automated-employment-decisions",
+          "product.credit-scoring",
+          "product.biometric-identification"
+        ]
+      },
+      "evidenceHints": [
+        "code: the override control in the interface, and whether overriding is easier or harder than accepting",
+        "cmd: measured accuracy on a held-out set, stated with the metric and the date",
+        "code: adversarial robustness measures, including prompt injection defences where inputs are untrusted"
+      ],
+      "severity": "critical",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "eu-aiact-transparency-users",
+      "theme": "ai",
+      "instrument": "EU AI Act (Regulation (EU) 2024/1689) Art. 50 — transparency obligations for certain AI systems",
+      "requirement": "People are informed when they interact with an AI system unless it is obvious, synthetic audio, image, video or text content is marked in a machine-readable way as artificially generated or manipulated, and deep fakes and certain AI-generated text published in the public interest are disclosed.",
+      "appliesWhen": {
+        "anyOf": [
+          "product.genai-feature",
+          "product.ai-system"
+        ]
+      },
+      "evidenceHints": [
+        "code: the disclosure string shown in the chat or assistant surface",
+        "code: watermarking or provenance metadata (for example C2PA) attached to generated media",
+        "doc: which outputs are considered exempt as obvious, and why"
+      ],
+      "severity": "high",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "eu-aiact-gpai",
+      "theme": "ai",
+      "instrument": "EU AI Act (Regulation (EU) 2024/1689) — obligations of providers of general-purpose AI models",
+      "requirement": "Providers of general-purpose AI models maintain technical documentation, provide information to downstream providers, implement a copyright policy covering text and data mining reservations, and publish a sufficiently detailed summary of training content. Additional obligations apply to models with systemic risk.",
+      "appliesWhen": {
+        "anyOf": [
+          "supplychain.ships-model-weights"
+        ]
+      },
+      "evidenceHints": [
+        "doc: model documentation for downstream integrators",
+        "doc: the training data summary and the copyright policy",
+        "ask: are you a provider of a GPAI model, or only a downstream user of one"
+      ],
+      "severity": "high",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "eu-aiact-literacy",
+      "theme": "ai",
+      "instrument": "EU AI Act (Regulation (EU) 2024/1689) — AI literacy of staff",
+      "requirement": "Providers and deployers take measures to ensure a sufficient level of AI literacy among staff and others operating AI systems on their behalf, proportionate to their role and the context of use.",
+      "appliesWhen": {
+        "anyOf": [
+          "product.ai-system",
+          "product.genai-feature"
+        ]
+      },
+      "evidenceHints": [
+        "doc: training records for staff who operate or oversee AI features",
+        "doc: internal guidance on the limits of the deployed systems",
+        "ask: do the people performing human oversight understand the failure modes"
+      ],
+      "severity": "medium",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "eu-nis2-risk-measures",
+      "theme": "security",
+      "instrument": "NIS2 Directive (EU) 2022/2555 Art. 21 — cybersecurity risk-management measures",
+      "requirement": "Essential and important entities take appropriate and proportionate technical, operational and organisational measures, covering at least risk analysis and security policies, incident handling, business continuity, supply chain security, secure acquisition and development, effectiveness assessment, cyber hygiene and training, cryptography, access control and asset management, MFA and secured communications.",
+      "appliesWhen": {
+        "anyOf": [
+          "sector.energy",
+          "sector.transport",
+          "sector.health",
+          "sector.water",
+          "sector.digital-infrastructure",
+          "sector.public",
+          "sector.telecom",
+          "sector.manufacturing"
+        ],
+        "allOf": [
+          "markets.eu"
+        ]
+      },
+      "evidenceHints": [
+        "doc: whether the entity has determined it is in scope as essential or important, and registered where required",
+        "config: MFA coverage, asset inventory completeness, supplier security requirements",
+        "doc: management body approval of the measures, which NIS2 makes personal"
+      ],
+      "severity": "critical",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "eu-nis2-incident-reporting",
+      "theme": "resilience",
+      "instrument": "NIS2 Directive (EU) 2022/2555 Art. 23 — reporting obligations",
+      "requirement": "Significant incidents are reported to the CSIRT or competent authority in stages: an early warning shortly after becoming aware, a fuller incident notification, and a final report. The exact deadlines and significance thresholds are set by the Directive and the national transposition and must be confirmed there.",
+      "appliesWhen": {
+        "anyOf": [
+          "sector.energy",
+          "sector.transport",
+          "sector.health",
+          "sector.water",
+          "sector.digital-infrastructure",
+          "sector.public",
+          "sector.telecom",
+          "sector.manufacturing"
+        ],
+        "allOf": [
+          "markets.eu"
+        ]
+      },
+      "evidenceHints": [
+        "doc: the incident runbook naming the national CSIRT and the staged deadlines",
+        "doc: the significance criteria used to decide whether to report",
+        "ask: who is authorised to file the early warning outside business hours"
+      ],
+      "severity": "critical",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "eu-dora-ict-risk",
+      "theme": "resilience",
+      "instrument": "DORA (Regulation (EU) 2022/2554) — ICT risk management framework",
+      "requirement": "Financial entities maintain an internal governance and control framework for ICT risk, covering identification of ICT-supported business functions, protection and prevention, detection, response and recovery, learning and evolving, and communication.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.eu"
+        ],
+        "anyOf": [
+          "sector.finance",
+          "sector.insurance",
+          "org.financial-entity"
+        ]
+      },
+      "evidenceHints": [
+        "doc: the ICT risk management framework and its approval by the management body",
+        "doc: mapping of critical or important functions to the ICT assets supporting them",
+        "ask: is the organisation a financial entity, or an ICT third-party provider to one"
+      ],
+      "severity": "critical",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "eu-dora-third-party",
+      "theme": "governance",
+      "instrument": "DORA (Regulation (EU) 2022/2554) — management of ICT third-party risk and register of information",
+      "requirement": "Contractual arrangements with ICT third-party service providers are maintained in a register of information, with mandatory contractual content covering access, audit, exit strategies and subcontracting, and with heightened requirements where the service supports critical or important functions.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.eu"
+        ],
+        "anyOf": [
+          "sector.finance",
+          "sector.insurance",
+          "org.financial-entity"
+        ]
+      },
+      "evidenceHints": [
+        "doc: the register of information and its completeness against the deployed vendor list",
+        "doc: exit strategy per provider supporting a critical or important function",
+        "config: the actual list of cloud and SaaS dependencies in production"
+      ],
+      "severity": "high",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "eu-dora-resilience-testing",
+      "theme": "resilience",
+      "instrument": "DORA (Regulation (EU) 2022/2554) — digital operational resilience testing",
+      "requirement": "A resilience testing programme is established, proportionate to size and risk profile, including vulnerability assessments, scenario-based testing and, for designated entities, threat-led penetration testing.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.eu"
+        ],
+        "anyOf": [
+          "sector.finance",
+          "sector.insurance",
+          "org.financial-entity"
+        ]
+      },
+      "evidenceHints": [
+        "doc: the annual testing plan and the results of the last cycle",
+        "cmd: evidence that findings from testing were remediated and retested",
+        "ask: has the entity been designated for threat-led penetration testing"
+      ],
+      "severity": "high",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "eu-cra-essential-requirements",
+      "theme": "security",
+      "instrument": "Cyber Resilience Act (Regulation (EU) 2024/2847) — essential cybersecurity requirements for products with digital elements",
+      "requirement": "Products with digital elements placed on the Union market are designed, developed and produced to ensure an appropriate level of cybersecurity, delivered with a secure default configuration, free of known exploitable vulnerabilities, and with the ability to receive security updates.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.eu"
+        ],
+        "anyOf": [
+          "product.connected-device",
+          "product.binary-distributed",
+          "supplychain.distributes-software"
+        ]
+      },
+      "evidenceHints": [
+        "config: default configuration of a fresh install — default credentials and open ports are the classic failure",
+        "cmd: known-vulnerability scan of the shipped artefact",
+        "doc: the update mechanism and whether updates can be delivered without user action where appropriate"
+      ],
+      "severity": "critical",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "eu-cra-vulnerability-handling",
+      "theme": "security",
+      "instrument": "Cyber Resilience Act (Regulation (EU) 2024/2847) — vulnerability handling and reporting",
+      "requirement": "Manufacturers identify and document vulnerabilities and components including an SBOM, address and remediate vulnerabilities without delay during the support period, enforce a coordinated vulnerability disclosure policy, and report actively exploited vulnerabilities and severe incidents to the designated authorities.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.eu"
+        ],
+        "anyOf": [
+          "product.connected-device",
+          "product.binary-distributed",
+          "supplychain.distributes-software"
+        ]
+      },
+      "evidenceHints": [
+        "doc: a published coordinated vulnerability disclosure policy with a contact channel and security.txt",
+        "config: SBOM generation per release, retained for the support period",
+        "doc: the declared support period, communicated to purchasers"
+      ],
+      "severity": "critical",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "eu-eaa-accessibility",
+      "theme": "accessibility",
+      "instrument": "European Accessibility Act (Directive (EU) 2019/882) as transposed nationally",
+      "requirement": "Covered products and services, which include e-commerce, consumer banking, e-books, electronic communications and elements of transport services, meet the accessibility requirements of the Directive, and the economic operator documents conformity and retains it.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.eu"
+        ],
+        "anyOf": [
+          "product.web-ui",
+          "product.mobile-app"
+        ]
+      },
+      "evidenceHints": [
+        "doc: whether the service falls within the covered categories, decided in writing",
+        "doc: the conformity documentation and any claimed disproportionate burden assessment",
+        "cmd: an audit against EN 301 549 rather than WCAG alone"
+      ],
+      "severity": "high",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "eu-en301549-conformance",
+      "theme": "accessibility",
+      "instrument": "EN 301 549 — accessibility requirements for ICT products and services (harmonised standard)",
+      "requirement": "ICT conforms to the applicable clauses of EN 301 549, which incorporates WCAG success criteria for web and documents but adds clauses for non-web software, hardware, real-time communication, biometrics and support services. Meeting WCAG alone does not establish EN 301 549 conformance.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.eu"
+        ],
+        "anyOf": [
+          "product.web-ui",
+          "product.mobile-app",
+          "product.desktop-app",
+          "org.sells-to-eu-public-sector"
+        ]
+      },
+      "evidenceHints": [
+        "doc: a clause-by-clause conformance record, including clauses marked not applicable with a reason",
+        "code: non-web software surfaces (desktop app, installer, PDF output) that WCAG-only audits skip",
+        "doc: accessibility of the support channel itself"
+      ],
+      "severity": "high",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "eu-wad-public-sector",
+      "theme": "accessibility",
+      "instrument": "Web Accessibility Directive (EU) 2016/2102 — public sector websites and mobile applications",
+      "requirement": "Public sector bodies make their websites and mobile applications perceivable, operable, understandable and robust, publish a detailed, regularly updated accessibility statement, and provide a feedback mechanism and enforcement route.",
+      "appliesWhen": {
+        "allOf": [
+          "markets.eu"
+        ],
+        "anyOf": [
+          "org.public-body",
+          "org.sells-to-eu-public-sector",
+          "users.public-sector"
+        ]
+      },
+      "evidenceHints": [
+        "doc: the published accessibility statement, its date and the model template used",
+        "code: the feedback mechanism and whether it works",
+        "doc: the list of non-accessible content and the stated reason"
+      ],
+      "severity": "high"
+    }
+  ]
+}

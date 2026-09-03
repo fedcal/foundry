@@ -1,0 +1,55 @@
+[
+  { "name": "type:feat",     "color": "1D76DB", "description": "New capability" },
+  { "name": "type:fix",      "color": "D73A4A", "description": "Defect correction" },
+  { "name": "type:chore",    "color": "CFD3D7", "description": "Maintenance with no user-visible change" },
+  { "name": "type:docs",     "color": "0075CA", "description": "Documentation only" },
+  { "name": "type:refactor", "color": "5319E7", "description": "Behaviour-preserving change" },
+  { "name": "type:test",     "color": "0E8A16", "description": "Test authoring or repair" },
+  { "name": "type:perf",     "color": "FBCA04", "description": "Performance work with a stated target" },
+  { "name": "type:ci",       "color": "BFD4F2", "description": "Pipeline and automation" },
+  { "name": "type:spike",    "color": "8B5CF6", "description": "Timeboxed investigation; deliverable is knowledge" },
+
+  { "name": "sev:1", "color": "B60205", "description": "Critical: production down or data loss" },
+  { "name": "sev:2", "color": "D93F0B", "description": "Major: core flow broken, workaround exists" },
+  { "name": "sev:3", "color": "FBCA04", "description": "Minor: degraded experience" },
+  { "name": "sev:4", "color": "FEF2C0", "description": "Trivial: cosmetic" },
+
+  { "name": "prio:must",   "color": "B60205", "description": "MoSCoW: release is cancelled without it" },
+  { "name": "prio:should", "color": "D93F0B", "description": "MoSCoW: important, release proceeds without it" },
+  { "name": "prio:could",  "color": "FBCA04", "description": "MoSCoW: included if capacity allows" },
+  { "name": "prio:wont",   "color": "CFD3D7", "description": "MoSCoW: out of scope this release, recorded not deleted" },
+
+  { "name": "size:xs", "color": "C2E0C6", "description": "Expected <= 2 h" },
+  { "name": "size:s",  "color": "C2E0C6", "description": "Expected <= 4 h" },
+  { "name": "size:m",  "color": "BFDADC", "description": "Expected <= 8 h" },
+  { "name": "size:l",  "color": "BFD4F2", "description": "Expected <= 16 h" },
+  { "name": "size:xl", "color": "E99695", "description": "Expected > 16 h - must be split before it is pulled" },
+
+  { "name": "status:triage",      "color": "EDEDED", "description": "Not yet assessed" },
+  { "name": "status:ready",       "color": "0E8A16", "description": "Passes the Definition of Ready" },
+  { "name": "status:in-progress", "color": "1D76DB", "description": "Being worked on now" },
+  { "name": "status:in-review",   "color": "5319E7", "description": "Awaiting review" },
+
+  { "name": "needs:criteria", "color": "E99695", "description": "No acceptance criteria - not ready by definition" },
+  { "name": "needs:estimate", "color": "E99695", "description": "No effort range recorded" },
+  { "name": "needs:owner",    "color": "E99695", "description": "No accountable person for the outcome" },
+  { "name": "needs:split",    "color": "E99695", "description": "Above the size ceiling - apply SPIDR" },
+  { "name": "needs:repro",    "color": "E99695", "description": "Defect cannot be reproduced from the report" },
+  { "name": "needs:decision", "color": "E99695", "description": "Open question blocking the estimate" },
+
+  { "name": "blocked",          "color": "000000", "description": "Cannot proceed; blocker named in the body" },
+  { "name": "blocked-external", "color": "000000", "description": "Blocked by a third party; escalation required" },
+  { "name": "risk",             "color": "D93F0B", "description": "Tracked in the risk register" },
+  { "name": "security",         "color": "B60205", "description": "Security impact; exempt from the ageing policy" },
+  { "name": "breaking",         "color": "B60205", "description": "Breaks a published contract" },
+  { "name": "good-first-issue", "color": "7057FF", "description": "Small, well-specified, low context required" },
+
+  { "name": "stale:60",  "color": "EDEDED", "description": "No update in 60 days - confirmation requested" },
+  { "name": "stale:90",  "color": "EDEDED", "description": "No update in 90 days - removed from Ready" },
+  { "name": "stale:180", "color": "EDEDED", "description": "No update in 180 days - closure proposed" },
+
+  { "name": "area:api",   "color": "C5DEF5", "description": "Adjust to the project; align with CODEOWNERS" },
+  { "name": "area:web",   "color": "C5DEF5", "description": "Adjust to the project; align with CODEOWNERS" },
+  { "name": "area:infra", "color": "C5DEF5", "description": "Adjust to the project; align with CODEOWNERS" },
+  { "name": "area:docs",  "color": "C5DEF5", "description": "Adjust to the project; align with CODEOWNERS" }
+]

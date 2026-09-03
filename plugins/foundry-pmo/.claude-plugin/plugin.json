@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin.json",
+  "name": "foundry-pmo",
+  "displayName": "Foundry PMO",
+  "version": "0.1.0",
+  "description": "PMO and agile delivery: roadmaps, backlog, requirements, risk, Scrum events, flow metrics and forecasting, and tracker operations across GitHub, Jira, Linear and GitLab.",
+  "author": {
+    "name": "Federico Calò",
+    "url": "https://federicocalo.dev"
+  },
+  "homepage": "https://fedcal.github.io/foundry",
+  "repository": "https://github.com/fedcal/foundry",
+  "license": "Apache-2.0",
+  "keywords": [
+    "claude-code",
+    "foundry",
+    "roadmap",
+    "backlog",
+    "requirements",
+    "github",
+    "pmo",
+    "scrum",
+    "agile",
+    "kanban",
+    "jira",
+    "slack",
+    "forecasting"
+  ],
+  "metadata": {
+    "foundry.vertical": "management",
+    "foundry.contracts": "v1"
+  },
+  "dependencies": [
+    {
+      "name": "foundry-core",
+      "version": "^0.1.0"
+    }
+  ],
+  "defaultEnabled": false
+}

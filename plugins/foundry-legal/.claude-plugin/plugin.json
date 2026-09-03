@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin.json",
+  "name": "foundry-legal",
+  "displayName": "Foundry Legal",
+  "version": "0.1.0",
+  "description": "Compliance engine with pluggable jurisdiction packs: global baseline, EU/Italy, North America, UK/APAC/LATAM, plus OSS licensing and IP.",
+  "author": {
+    "name": "Federico Calò",
+    "url": "https://federicocalo.dev"
+  },
+  "homepage": "https://fedcal.github.io/foundry",
+  "repository": "https://github.com/fedcal/foundry",
+  "license": "Apache-2.0",
+  "keywords": [
+    "claude-code",
+    "foundry",
+    "gdpr",
+    "ai-act",
+    "nis2",
+    "accessibility",
+    "licensing",
+    "compliance"
+  ],
+  "metadata": {
+    "foundry.vertical": "compliance",
+    "foundry.contracts": "v1"
+  },
+  "dependencies": [
+    {
+      "name": "foundry-core",
+      "version": "^0.1.0"
+    }
+  ],
+  "defaultEnabled": false
+}

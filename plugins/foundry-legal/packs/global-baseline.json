@@ -1,0 +1,723 @@
+{
+  "pack": {
+    "id": "global-baseline",
+    "name": "Global baseline (standards and frameworks, not law)",
+    "scope": "Controls drawn from voluntary standards and frameworks that customers, auditors and procurement teams ask for everywhere: ISO/IEC 27001 Annex A, ISO/IEC 27701, SOC 2 Trust Services Criteria, NIST CSF 2.0, NIST AI RMF 1.0, OWASP ASVS, WCAG 2.2 AA, SBOM and open-source licence hygiene. These are NOT statutes. Nothing in this pack creates a legal obligation by itself; obligations arise when a contract, a certification scheme or a law incorporates one of these standards by reference. This pack deliberately excludes: national law of any kind, sector regulation, export controls, employment law, tax and corporate law.",
+    "lastReviewed": null,
+    "sources": [
+      {
+        "instrument": "ISO/IEC 27001",
+        "url": "https://www.iso.org/standard/27001",
+        "note": "Host blocks automated requests (HTTP 403 on check); URL is the canonical entry point and was not machine-verified. The standard itself is paywalled."
+      },
+      {
+        "instrument": "NIST Cybersecurity Framework",
+        "url": "https://www.nist.gov/cyberframework",
+        "checkedOn": "2026-08-27"
+      },
+      {
+        "instrument": "NIST AI Risk Management Framework",
+        "url": "https://www.nist.gov/itl/ai-risk-management-framework",
+        "checkedOn": "2026-08-27"
+      },
+      {
+        "instrument": "W3C — WCAG 2.2",
+        "url": "https://www.w3.org/TR/WCAG22/",
+        "checkedOn": "2026-08-27"
+      },
+      {
+        "instrument": "OWASP Application Security Verification Standard",
+        "url": "https://owasp.org/www-project-application-security-verification-standard/",
+        "checkedOn": "2026-08-27"
+      }
+    ],
+    "verificationRequired": "Automated technical assessment. Not legal advice. Standards are revised and clause numbering changes between editions (ISO/IEC 27001:2013 to :2022 renumbered Annex A entirely; OWASP ASVS 5.0 renumbered chapters relative to 4.0.x). lastReviewed is null: no control in this pack has been confirmed against the current official text. Confirm every control against the edition your organisation is actually certified or contracted against, and have a qualified professional confirm anything consequential."
+  },
+  "controls": [
+    {
+      "controlId": "gbl-iso27001-a5-1-policy",
+      "theme": "governance",
+      "instrument": "ISO/IEC 27001:2022 Annex A 5.1 (Policies for information security)",
+      "requirement": "An information security policy set is defined, approved by management, published, communicated to relevant personnel and reviewed at planned intervals.",
+      "appliesWhen": {
+        "always": true
+      },
+      "evidenceHints": [
+        "doc: SECURITY.md, docs/security/policy.md, an ISMS policy register",
+        "doc: evidence of management approval and a review date",
+        "ask: who owns the policy set and when was it last reviewed"
+      ],
+      "severity": "medium"
+    },
+    {
+      "controlId": "gbl-iso27001-a5-15-access",
+      "theme": "security",
+      "instrument": "ISO/IEC 27001:2022 Annex A 5.15 (Access control)",
+      "requirement": "Rules for physical and logical access to information and other associated assets are established and implemented on the basis of business and information security requirements.",
+      "appliesWhen": {
+        "always": true
+      },
+      "evidenceHints": [
+        "code: authorisation middleware, policy files, role/permission definitions",
+        "config: IAM policies, RBAC manifests, database grants",
+        "cmd: list of accounts with administrative privileges"
+      ],
+      "severity": "high"
+    },
+    {
+      "controlId": "gbl-iso27001-a5-19-suppliers",
+      "theme": "governance",
+      "instrument": "ISO/IEC 27001:2022 Annex A 5.19 (Information security in supplier relationships)",
+      "requirement": "Processes and procedures manage the information security risks associated with the use of supplier products and services.",
+      "appliesWhen": {
+        "always": true
+      },
+      "evidenceHints": [
+        "doc: vendor register, subprocessor list, signed DPAs",
+        "config: third-party services referenced in infrastructure and application configuration",
+        "ask: is there a supplier onboarding security review"
+      ],
+      "severity": "medium"
+    },
+    {
+      "controlId": "gbl-iso27001-a5-23-cloud",
+      "theme": "security",
+      "instrument": "ISO/IEC 27001:2022 Annex A 5.23 (Information security for use of cloud services)",
+      "requirement": "Processes for acquisition, use, management and exit from cloud services are established in accordance with the organisation's information security requirements.",
+      "appliesWhen": {
+        "anyOf": [
+          "deployment.saas",
+          "deployment.multi-region",
+          "deployment.eu",
+          "deployment.us"
+        ]
+      },
+      "evidenceHints": [
+        "config: cloud provider account structure, region configuration, IaC definitions",
+        "doc: an exit or portability plan naming the data export path",
+        "ask: which cloud regions actually hold production data"
+      ],
+      "severity": "medium"
+    },
+    {
+      "controlId": "gbl-iso27001-a5-24-incident",
+      "theme": "resilience",
+      "instrument": "ISO/IEC 27001:2022 Annex A 5.24 and A 5.26 (Incident management planning, preparation and response)",
+      "requirement": "Incident management responsibilities and procedures are planned and prepared, and information security incidents are responded to in accordance with documented procedures.",
+      "appliesWhen": {
+        "always": true
+      },
+      "evidenceHints": [
+        "doc: incident response runbook with named roles and escalation path",
+        "doc: evidence the plan has been exercised at least once",
+        "code: alerting rules and on-call routing configuration"
+      ],
+      "severity": "high"
+    },
+    {
+      "controlId": "gbl-iso27001-a5-30-continuity",
+      "theme": "resilience",
+      "instrument": "ISO/IEC 27001:2022 Annex A 5.30 (ICT readiness for business continuity)",
+      "requirement": "ICT readiness is planned, implemented, maintained and tested against business continuity objectives and ICT continuity requirements.",
+      "appliesWhen": {
+        "always": true
+      },
+      "evidenceHints": [
+        "config: backup schedule, retention and replication configuration",
+        "cmd: date and outcome of the most recent restore test",
+        "doc: stated RTO and RPO per service"
+      ],
+      "severity": "high"
+    },
+    {
+      "controlId": "gbl-iso27001-a5-34-pii",
+      "theme": "privacy",
+      "instrument": "ISO/IEC 27001:2022 Annex A 5.34 (Privacy and protection of PII)",
+      "requirement": "Requirements for the preservation of privacy and protection of personally identifiable information are identified and met according to applicable legislation, regulation and contractual requirements.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal"
+        ]
+      },
+      "evidenceHints": [
+        "doc: data inventory or record of processing",
+        "code: models and schemas that carry personal data fields",
+        "ask: which national privacy laws the organisation considers applicable"
+      ],
+      "severity": "high"
+    },
+    {
+      "controlId": "gbl-iso27001-a6-3-training",
+      "theme": "governance",
+      "instrument": "ISO/IEC 27001:2022 Annex A 6.3 (Information security awareness, education and training)",
+      "requirement": "Personnel and relevant interested parties receive appropriate information security awareness, education and training and regular updates relevant to their job function.",
+      "appliesWhen": {
+        "always": true
+      },
+      "evidenceHints": [
+        "doc: training records with dates and completion status",
+        "ask: do engineers receive secure development training distinct from generic awareness training"
+      ],
+      "severity": "low"
+    },
+    {
+      "controlId": "gbl-iso27001-a8-8-vulns",
+      "theme": "security",
+      "instrument": "ISO/IEC 27001:2022 Annex A 8.8 (Management of technical vulnerabilities)",
+      "requirement": "Information about technical vulnerabilities of information systems in use is obtained, exposure evaluated and appropriate measures taken.",
+      "appliesWhen": {
+        "always": true
+      },
+      "evidenceHints": [
+        "config: dependency scanning in CI (Dependabot, Renovate, osv-scanner, Trivy)",
+        "cmd: current count of unremediated high/critical advisories",
+        "doc: a remediation SLA per severity"
+      ],
+      "severity": "high"
+    },
+    {
+      "controlId": "gbl-iso27001-a8-10-deletion",
+      "theme": "privacy",
+      "instrument": "ISO/IEC 27001:2022 Annex A 8.10 (Information deletion)",
+      "requirement": "Information stored in information systems, devices or in any other storage media is deleted when no longer required.",
+      "appliesWhen": {
+        "always": true
+      },
+      "evidenceHints": [
+        "code: a scheduled job, TTL or lifecycle rule that actually deletes records",
+        "config: object storage lifecycle policies, log retention settings, backup expiry",
+        "ask: does deletion propagate to backups, search indexes, caches and analytics"
+      ],
+      "severity": "high"
+    },
+    {
+      "controlId": "gbl-iso27001-a8-12-leakage",
+      "theme": "security",
+      "instrument": "ISO/IEC 27001:2022 Annex A 8.12 (Data leakage prevention)",
+      "requirement": "Data leakage prevention measures are applied to systems, networks and other devices that process, store or transmit sensitive information.",
+      "appliesWhen": {
+        "anyOf": [
+          "data.personal",
+          "data.financial",
+          "data.health"
+        ]
+      },
+      "evidenceHints": [
+        "config: secret scanning in CI and in the repository history",
+        "code: log redaction or masking helpers applied at the logging boundary",
+        "cmd: grep of production logs for token, password, email or identifier patterns"
+      ],
+      "severity": "high"
+    },
+    {
+      "controlId": "gbl-iso27001-a8-15-logging",
+      "theme": "security",
+      "instrument": "ISO/IEC 27001:2022 Annex A 8.15 and A 8.16 (Logging and monitoring activities)",
+      "requirement": "Logs recording activities, exceptions, faults and other relevant events are produced, stored, protected and analysed, and networks, systems and applications are monitored for anomalous behaviour.",
+      "appliesWhen": {
+        "always": true
+      },
+      "evidenceHints": [
+        "code: audit log emission on authentication, authorisation and data access events",
+        "config: log retention period and access restrictions on the log store",
+        "ask: can you reconstruct who accessed a given record and when"
+      ],
+      "severity": "high"
+    },
+    {
+      "controlId": "gbl-iso27001-a8-24-crypto",
+      "theme": "security",
+      "instrument": "ISO/IEC 27001:2022 Annex A 8.24 (Use of cryptography)",
+      "requirement": "Rules for the effective use of cryptography, including cryptographic key management, are defined and implemented.",
+      "appliesWhen": {
+        "always": true
+      },
+      "evidenceHints": [
+        "code: cipher suites, algorithms and key sizes used in the codebase",
+        "config: TLS configuration, at-rest encryption settings, KMS or vault integration",
+        "cmd: search for hand-rolled cryptography or deprecated primitives (MD5, SHA-1, ECB, static IVs)"
+      ],
+      "severity": "high"
+    },
+    {
+      "controlId": "gbl-iso27001-a8-25-sdlc",
+      "theme": "security",
+      "instrument": "ISO/IEC 27001:2022 Annex A 8.25, A 8.26 and A 8.28 (Secure development life cycle, application security requirements, secure coding)",
+      "requirement": "Rules for secure development are established and applied, security requirements are specified for applications, and secure coding principles are applied to software development.",
+      "appliesWhen": {
+        "always": true
+      },
+      "evidenceHints": [
+        "config: SAST, linting and security rules enforced in CI as a blocking gate",
+        "doc: a security review step in the pull request template or contribution guide",
+        "code: presence of a threat model or abuse-case documentation"
+      ],
+      "severity": "medium"
+    },
+    {
+      "controlId": "gbl-iso27001-a8-31-envsep",
+      "theme": "security",
+      "instrument": "ISO/IEC 27001:2022 Annex A 8.31 and A 8.32 (Separation of environments, change management)",
+      "requirement": "Development, test and production environments are separated and secured, and changes to information processing facilities and systems are subject to change management procedures.",
+      "appliesWhen": {
+        "always": true
+      },
+      "evidenceHints": [
+        "config: separate credentials and accounts per environment, no shared production secrets",
+        "cmd: check whether production data is copied into non-production environments",
+        "config: branch protection and required review before deployment"
+      ],
+      "severity": "high"
+    },
+    {
+      "controlId": "gbl-iso27701-role",
+      "theme": "privacy",
+      "instrument": "ISO/IEC 27701 (Privacy Information Management System)",
+      "requirement": "The organisation determines and documents its role for each processing activity (PII controller, PII processor, or both) and applies the corresponding set of PIMS controls.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal"
+        ]
+      },
+      "evidenceHints": [
+        "doc: a statement of role per processing activity",
+        "doc: customer-facing contracts that assign controller/processor roles",
+        "ask: are there activities where the organisation is a controller over its own customers' end users"
+      ],
+      "severity": "medium",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "gbl-iso27701-minimisation",
+      "theme": "privacy",
+      "instrument": "ISO/IEC 27701 (PIMS) — collection limitation and data minimisation",
+      "requirement": "Collection of personally identifiable information is limited to what is relevant, proportional and necessary for the identified purposes, and purposes are documented before collection.",
+      "appliesWhen": {
+        "allOf": [
+          "data.personal"
+        ]
+      },
+      "evidenceHints": [
+        "code: request/response DTOs and form fields, checked field by field against a stated purpose",
+        "code: analytics and telemetry payloads, which are the usual source of over-collection",
+        "ask: which fields could be removed without breaking a stated purpose"
+      ],
+      "severity": "medium",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "gbl-soc2-cc-governance",
+      "theme": "governance",
+      "instrument": "SOC 2 Trust Services Criteria — Common Criteria (control environment, risk assessment, monitoring)",
+      "requirement": "The entity demonstrates a defined control environment with assigned responsibilities, performs risk assessment covering fraud and change, and monitors the operation of its controls.",
+      "appliesWhen": {
+        "anyOf": [
+          "deployment.saas",
+          "org.processor",
+          "users.business"
+        ]
+      },
+      "evidenceHints": [
+        "doc: org chart or responsibility matrix for security controls",
+        "doc: a risk register with owners and review dates",
+        "ask: has a SOC 2 Type I or Type II report ever been issued, and for which criteria"
+      ],
+      "severity": "medium"
+    },
+    {
+      "controlId": "gbl-soc2-cc6-logical-access",
+      "theme": "security",
+      "instrument": "SOC 2 Trust Services Criteria — logical and physical access controls",
+      "requirement": "Access to systems and data is authorised, provisioned, modified and removed based on role, and access is reviewed periodically. Removal on termination is timely.",
+      "appliesWhen": {
+        "anyOf": [
+          "deployment.saas",
+          "org.processor",
+          "users.business"
+        ]
+      },
+      "evidenceHints": [
+        "cmd: current list of users with production access and their last access review date",
+        "doc: joiner/mover/leaver procedure with a target removal window",
+        "config: MFA enforcement on identity provider and cloud console"
+      ],
+      "severity": "high"
+    },
+    {
+      "controlId": "gbl-soc2-availability",
+      "theme": "resilience",
+      "instrument": "SOC 2 Trust Services Criteria — Availability",
+      "requirement": "Capacity is monitored against objectives, environmental and recovery infrastructure is maintained, and recovery procedures are tested. Only claim this category if it is in the audit scope.",
+      "appliesWhen": {
+        "anyOf": [
+          "deployment.saas"
+        ]
+      },
+      "evidenceHints": [
+        "config: monitoring and alerting on saturation signals",
+        "doc: published or contractual availability commitment",
+        "cmd: most recent disaster recovery exercise report"
+      ],
+      "severity": "medium"
+    },
+    {
+      "controlId": "gbl-nistcsf-govern",
+      "theme": "governance",
+      "instrument": "NIST Cybersecurity Framework 2.0 — GOVERN function",
+      "requirement": "Cybersecurity risk management strategy, expectations and policy are established, communicated and monitored, including roles, responsibilities, authorities and supply chain risk management.",
+      "appliesWhen": {
+        "always": true
+      },
+      "evidenceHints": [
+        "doc: a named accountable owner for cybersecurity risk",
+        "doc: supply chain risk management practice covering third-party software",
+        "ask: how are cybersecurity risks escalated to leadership"
+      ],
+      "severity": "medium"
+    },
+    {
+      "controlId": "gbl-nistcsf-detect-respond-recover",
+      "theme": "resilience",
+      "instrument": "NIST Cybersecurity Framework 2.0 — DETECT, RESPOND and RECOVER functions",
+      "requirement": "Anomalies and adverse events are detected and analysed, response actions are executed and communicated, and assets and operations are restored according to a plan.",
+      "appliesWhen": {
+        "always": true
+      },
+      "evidenceHints": [
+        "config: detection rules mapped to plausible attack paths, not just infrastructure health checks",
+        "doc: communications plan naming who tells customers and regulators",
+        "cmd: mean time to detect and mean time to recover from the last incidents"
+      ],
+      "severity": "high"
+    },
+    {
+      "controlId": "gbl-nistairmf-govern",
+      "theme": "ai",
+      "instrument": "NIST AI Risk Management Framework 1.0 — GOVERN function",
+      "requirement": "Policies, processes, roles and accountability structures for AI risk are in place, including named ownership of each AI system and a process for retiring or disabling it.",
+      "appliesWhen": {
+        "anyOf": [
+          "product.ai-system",
+          "product.genai-feature"
+        ]
+      },
+      "evidenceHints": [
+        "doc: an AI system inventory with an owner per system",
+        "doc: an AI use policy covering acceptable and prohibited uses",
+        "ask: who can switch an AI feature off, and how fast"
+      ],
+      "severity": "high"
+    },
+    {
+      "controlId": "gbl-nistairmf-map",
+      "theme": "ai",
+      "instrument": "NIST AI Risk Management Framework 1.0 — MAP function",
+      "requirement": "Context is established: intended purpose, deployment setting, affected individuals and groups, capabilities and limitations, and foreseeable misuse of each AI system.",
+      "appliesWhen": {
+        "anyOf": [
+          "product.ai-system",
+          "product.genai-feature"
+        ]
+      },
+      "evidenceHints": [
+        "doc: a system card or model card stating intended and out-of-scope uses",
+        "code: prompt templates and system instructions, which encode the actual intended behaviour",
+        "ask: which decisions about people does this system influence"
+      ],
+      "severity": "high"
+    },
+    {
+      "controlId": "gbl-nistairmf-measure",
+      "theme": "ai",
+      "instrument": "NIST AI Risk Management Framework 1.0 — MEASURE function",
+      "requirement": "AI risks are analysed, benchmarked and tracked with appropriate metrics and methods, including evaluation of validity, reliability, safety, bias and robustness, with results recorded.",
+      "appliesWhen": {
+        "anyOf": [
+          "product.ai-system",
+          "product.genai-feature"
+        ]
+      },
+      "evidenceHints": [
+        "code: an evaluation suite in the repository with a stored baseline and thresholds",
+        "cmd: date and result of the last evaluation run against the deployed model version",
+        "doc: bias or fairness testing where the system affects people"
+      ],
+      "severity": "high"
+    },
+    {
+      "controlId": "gbl-nistairmf-manage",
+      "theme": "ai",
+      "instrument": "NIST AI Risk Management Framework 1.0 — MANAGE function",
+      "requirement": "Identified AI risks are prioritised, treated, monitored in production, and responded to, including incident handling and mechanisms to recover from AI system failures.",
+      "appliesWhen": {
+        "anyOf": [
+          "product.ai-system",
+          "product.genai-feature"
+        ]
+      },
+      "evidenceHints": [
+        "config: production monitoring of AI outputs (refusal rate, drift, complaint volume)",
+        "doc: an AI incident procedure distinct from the generic security incident procedure",
+        "code: a kill switch, feature flag or fallback path when the model is unavailable or misbehaving"
+      ],
+      "severity": "high"
+    },
+    {
+      "controlId": "gbl-asvs-authn-session",
+      "theme": "security",
+      "instrument": "OWASP ASVS — authentication and session management chapters",
+      "requirement": "Authentication verifies credentials securely, protects against credential stuffing and brute force, and sessions are generated, transmitted, rotated and terminated safely.",
+      "appliesWhen": {
+        "anyOf": [
+          "product.web-ui",
+          "product.api-only",
+          "product.mobile-app"
+        ]
+      },
+      "evidenceHints": [
+        "code: password hashing algorithm and parameters, session cookie flags, token lifetimes",
+        "code: logout and session invalidation paths, including on password change",
+        "config: rate limiting on authentication endpoints"
+      ],
+      "severity": "critical",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "gbl-asvs-access-control",
+      "theme": "security",
+      "instrument": "OWASP ASVS — access control chapter",
+      "requirement": "Access control decisions are enforced server-side on every request, deny by default, and object-level authorisation prevents users from reaching records belonging to others.",
+      "appliesWhen": {
+        "anyOf": [
+          "product.web-ui",
+          "product.api-only",
+          "product.mobile-app"
+        ]
+      },
+      "evidenceHints": [
+        "code: every route handler that accepts an id parameter — check for an ownership or tenancy predicate",
+        "code: multi-tenant queries, checking the tenant filter is not optional",
+        "cmd: tests that assert a 403/404 for a foreign resource id"
+      ],
+      "severity": "critical",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "gbl-asvs-validation-encoding",
+      "theme": "security",
+      "instrument": "OWASP ASVS — validation, sanitisation and encoding chapter",
+      "requirement": "Untrusted input is validated at the trust boundary with positive (allow-list) schemas, and output is encoded for its destination context to prevent injection.",
+      "appliesWhen": {
+        "anyOf": [
+          "product.web-ui",
+          "product.api-only",
+          "product.mobile-app",
+          "product.cli"
+        ]
+      },
+      "evidenceHints": [
+        "code: schema validation at controller/handler entry points",
+        "code: string-concatenated SQL, shell commands or template rendering",
+        "config: Content-Security-Policy header for browser surfaces"
+      ],
+      "severity": "critical",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "gbl-asvs-secrets-config",
+      "theme": "security",
+      "instrument": "OWASP ASVS — configuration and secret management chapters",
+      "requirement": "Secrets are not embedded in source code or images, configuration is hardened for production, and dependencies are inventoried and kept current.",
+      "appliesWhen": {
+        "always": true
+      },
+      "evidenceHints": [
+        "cmd: secret scan across the working tree and git history",
+        "config: how secrets reach the runtime (environment, vault, mounted file)",
+        "config: debug flags, stack traces and verbose errors disabled in production"
+      ],
+      "severity": "critical",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "gbl-wcag22-perceivable",
+      "theme": "accessibility",
+      "instrument": "WCAG 2.2 Level AA — SC 1.1.1 Non-text Content, 1.3.1 Info and Relationships, 1.4.3 Contrast (Minimum), 1.4.11 Non-text Contrast",
+      "requirement": "Non-text content has text alternatives, structure and relationships are programmatically determinable, and text and interface component contrast meet the AA thresholds.",
+      "appliesWhen": {
+        "anyOf": [
+          "product.web-ui",
+          "product.mobile-app"
+        ]
+      },
+      "evidenceHints": [
+        "code: img/icon components without alt text or accessible names",
+        "code: headings, lists, tables and landmarks used semantically rather than visually",
+        "cmd: automated contrast audit output, plus the manual checks automation cannot perform"
+      ],
+      "severity": "high"
+    },
+    {
+      "controlId": "gbl-wcag22-operable",
+      "theme": "accessibility",
+      "instrument": "WCAG 2.2 Level AA — SC 2.1.1 Keyboard, 2.4.7 Focus Visible, 2.4.11 Focus Not Obscured (Minimum)",
+      "requirement": "All functionality is operable by keyboard without traps, the keyboard focus indicator is visible, and the focused component is not entirely hidden by author-created content.",
+      "appliesWhen": {
+        "anyOf": [
+          "product.web-ui",
+          "product.mobile-app"
+        ]
+      },
+      "evidenceHints": [
+        "code: click handlers on non-interactive elements, custom widgets without key handling",
+        "code: sticky headers, cookie banners and toasts that can cover the focused element",
+        "cmd: keyboard-only walkthrough of the primary user journey, recorded"
+      ],
+      "severity": "high"
+    },
+    {
+      "controlId": "gbl-wcag22-input",
+      "theme": "accessibility",
+      "instrument": "WCAG 2.2 Level AA — SC 2.5.7 Dragging Movements, 2.5.8 Target Size (Minimum), 3.3.7 Redundant Entry, 3.3.8 Accessible Authentication (Minimum)",
+      "requirement": "Dragging has a single-pointer alternative, pointer targets meet the minimum size, previously entered information is not required to be re-entered, and authentication does not depend on a cognitive function test without an alternative.",
+      "appliesWhen": {
+        "anyOf": [
+          "product.web-ui",
+          "product.mobile-app"
+        ]
+      },
+      "evidenceHints": [
+        "code: drag-and-drop interactions, sliders and reorderable lists",
+        "code: login flows using puzzles or transcription, and whether paste is blocked on password fields",
+        "code: multi-step forms that re-ask for data already supplied"
+      ],
+      "severity": "high"
+    },
+    {
+      "controlId": "gbl-wcag22-robust",
+      "theme": "accessibility",
+      "instrument": "WCAG 2.2 Level AA — SC 4.1.2 Name, Role, Value and SC 4.1.3 Status Messages",
+      "requirement": "Custom interface components expose a correct name, role and state to assistive technology, and status messages are announced without receiving focus.",
+      "appliesWhen": {
+        "anyOf": [
+          "product.web-ui",
+          "product.mobile-app"
+        ]
+      },
+      "evidenceHints": [
+        "code: custom dropdowns, modals, tabs and toggles and their ARIA attributes",
+        "code: live regions for async results, validation summaries and toasts",
+        "cmd: screen reader pass on the primary journey (note: SC 4.1.1 Parsing is obsolete in WCAG 2.2)"
+      ],
+      "severity": "high"
+    },
+    {
+      "controlId": "gbl-sbom-generate",
+      "theme": "licensing",
+      "instrument": "SBOM formats: SPDX (ISO/IEC 5962:2021) and CycloneDX",
+      "requirement": "A software bill of materials is generated automatically as part of the build for each released artefact, in a machine-readable standard format, and includes component name, version, supplier and licence.",
+      "appliesWhen": {
+        "anyOf": [
+          "supplychain.distributes-software",
+          "supplychain.third-party-oss",
+          "product.binary-distributed"
+        ]
+      },
+      "evidenceHints": [
+        "config: an SBOM generation step in the CI pipeline",
+        "cmd: syft, cdxgen, or the native SBOM output of the package manager",
+        "doc: where SBOMs are stored and for how long"
+      ],
+      "severity": "medium",
+      "unverifiedCitation": true
+    },
+    {
+      "controlId": "gbl-sbom-retain",
+      "theme": "licensing",
+      "instrument": "SBOM retention and disclosure practice",
+      "requirement": "SBOMs are retained per released version and are retrievable for the supported life of that version, so that a newly disclosed vulnerability can be traced to affected releases.",
+      "appliesWhen": {
+        "anyOf": [
+          "supplychain.distributes-software",
+          "product.binary-distributed",
+          "product.connected-device"
+        ]
+      },
+      "evidenceHints": [
+        "cmd: retrieve the SBOM for the oldest still-supported release",
+        "doc: a stated support window per release",
+        "ask: could you answer 'which of our releases contain library X version Y' within a day"
+      ],
+      "severity": "medium"
+    },
+    {
+      "controlId": "gbl-licence-declared",
+      "theme": "licensing",
+      "instrument": "Open-source licence hygiene — declared project licence and SPDX identifiers",
+      "requirement": "The project declares its own licence unambiguously in a LICENSE file and in package metadata, using a valid SPDX identifier, consistent across every distribution channel.",
+      "appliesWhen": {
+        "always": true
+      },
+      "evidenceHints": [
+        "doc: LICENSE or LICENSE.txt at the repository root",
+        "config: the licence field in package.json, pyproject.toml, pom.xml, Cargo.toml, go.mod metadata",
+        "cmd: check that the declared identifier matches the actual licence text"
+      ],
+      "severity": "medium"
+    },
+    {
+      "controlId": "gbl-licence-inventory-notice",
+      "theme": "licensing",
+      "instrument": "Open-source licence hygiene — third-party inventory, attribution and NOTICE",
+      "requirement": "A current inventory of third-party components and their licences exists, attribution and licence text required by those licences is reproduced in the distributed artefact, and unknown or missing licences are treated as blocking.",
+      "appliesWhen": {
+        "allOf": [
+          "supplychain.third-party-oss"
+        ]
+      },
+      "evidenceHints": [
+        "cmd: dependency licence report from the package manager or an SBOM query",
+        "doc: NOTICE file or a third-party licences screen in the product",
+        "cmd: count of dependencies with licence 'UNKNOWN', 'NOASSERTION' or empty"
+      ],
+      "severity": "high"
+    },
+    {
+      "controlId": "gbl-licence-contributor-ip",
+      "theme": "licensing",
+      "instrument": "Contributor IP provenance — CLA or DCO",
+      "requirement": "Inbound contributions are covered by a clear IP mechanism (a contributor licence agreement or a Developer Certificate of Origin sign-off), and the mechanism is actually enforced rather than merely documented.",
+      "appliesWhen": {
+        "allOf": [
+          "supplychain.accepts-external-contributions"
+        ]
+      },
+      "evidenceHints": [
+        "doc: CONTRIBUTING.md stating CLA or DCO",
+        "config: a CI check enforcing sign-off or CLA acceptance on pull requests",
+        "cmd: sample recent merged commits for the enforcement signal"
+      ],
+      "severity": "medium"
+    },
+    {
+      "controlId": "gbl-supplychain-provenance",
+      "theme": "licensing",
+      "instrument": "Build provenance and artefact integrity (SLSA-style provenance, signed releases)",
+      "requirement": "Released artefacts are built from an identified source revision by an auditable build process, and are signed or accompanied by verifiable provenance so consumers can detect substitution.",
+      "appliesWhen": {
+        "anyOf": [
+          "supplychain.distributes-software",
+          "product.binary-distributed",
+          "supplychain.ships-model-weights"
+        ]
+      },
+      "evidenceHints": [
+        "config: release pipeline definition, including whether builds are reproducible from a tagged commit",
+        "cmd: verify the signature or attestation on the latest published artefact",
+        "ask: can a consumer verify the artefact without trusting the download channel"
+      ],
+      "severity": "medium",
+      "unverifiedCitation": true
+    }
+  ]
+}

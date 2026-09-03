@@ -1,0 +1,49 @@
+PARAMETERS,item,,,,value,,,,,,,notes
+,system / option name,,,,<<TBC>>,,,,,,,options must deliver the SAME outcome to be comparable
+,discount rate r,,,,<<TBC: r>>,,,,,,,"formulas stay in error until r is supplied — deliberate, not a bug"
+,horizon N (years),,,,5,,,,,,,match useful life; re-run at N-2 and N+2
+,convention,,,,<<TBC: nominal | real>>,,,,,,,nominal cash flows need a nominal rate
+,currency,,,,EUR,,,,,,,
+,boundary rule,,,,<<TBC: what is inside the system>>,,,,,,,shared platform allocated or excluded?
+,,,,,,,,,,,,
+block,line,shape,driver,provenance,y0,y1,y2,y3,y4,y5,undiscounted,pv
+DISCOUNT FACTOR,1/(1+r)^t,,,,"=1/(1+$F$3)^0","=1/(1+$F$3)^1","=1/(1+$F$3)^2","=1/(1+$F$3)^3","=1/(1+$F$3)^4","=1/(1+$F$3)^5",,
+BUILD,delivery effort (from estimate.v1),one-off,,[measured: .foundry/blackboard/estimation/cost-engineer.json],<<TBC>>,0,0,0,0,0,"=SUM(F11:K11)","=SUMPRODUCT(F11:K11,$F$10:$K$10)"
+BUILD,security / accessibility / privacy review + remediation,one-off,,[ASSUMPTION — confirm],<<TBC>>,0,0,0,0,0,"=SUM(F12:K12)","=SUMPRODUCT(F12:K12,$F$10:$K$10)"
+BUILD,data migration incl. the second backfill,one-off,,[ASSUMPTION — confirm],<<TBC>>,0,0,0,0,0,"=SUM(F13:K13)","=SUMPRODUCT(F13:K13,$F$10:$K$10)"
+BUILD,parallel run of old and new during transition,one-off,,[ASSUMPTION — confirm],<<TBC>>,<<TBC>>,0,0,0,0,"=SUM(F14:K14)","=SUMPRODUCT(F14:K14,$F$10:$K$10)"
+RUN-INFRA,compute,scaling,<<TBC: driver>>,[measured: <<TBC: billing export>>],<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,"=SUM(F15:K15)","=SUMPRODUCT(F15:K15,$F$10:$K$10)"
+RUN-INFRA,managed database incl. provisioned IOPS,scaling,<<TBC>>,[measured: <<TBC>>],<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,"=SUM(F16:K16)","=SUMPRODUCT(F16:K16,$F$10:$K$10)"
+RUN-INFRA,object storage + request charges,scaling,<<TBC>>,[measured: <<TBC>>],<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,"=SUM(F17:K17)","=SUMPRODUCT(F17:K17,$F$10:$K$10)"
+RUN-INFRA,backups: snapshots + cross-region copies + archive tier,scaling,<<TBC>>,[ASSUMPTION — confirm],<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,"=SUM(F18:K18)","=SUMPRODUCT(F18:K18,$F$10:$K$10)"
+RUN-INFRA,egress: internet + cross-region + cross-AZ + NAT processing,scaling,<<TBC>>,[measured: <<TBC>>],<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,"=SUM(F19:K19)","=SUMPRODUCT(F19:K19,$F$10:$K$10)"
+RUN-INFRA,non-production environments,step,<<TBC: count>>,[ASSUMPTION — confirm],<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,"=SUM(F20:K20)","=SUMPRODUCT(F20:K20,$F$10:$K$10)"
+RUN-INFRA,disaster recovery standby capacity,flat,,[ASSUMPTION — confirm],<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,"=SUM(F21:K21)","=SUMPRODUCT(F21:K21,$F$10:$K$10)"
+RUN-OBS,log ingestion + retention,scaling,<<TBC: GB/day>>,[measured: <<TBC>>],<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,"=SUM(F22:K22)","=SUMPRODUCT(F22:K22,$F$10:$K$10)"
+RUN-OBS,metrics + tracing (cardinality-driven),scaling,<<TBC: series count>>,[measured: <<TBC>>],<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,"=SUM(F23:K23)","=SUMPRODUCT(F23:K23,$F$10:$K$10)"
+RUN-PEOPLE,on-call standby + call-out,flat,<<TBC: rota size>>,[given: <<TBC>>],0,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,"=SUM(F24:K24)","=SUMPRODUCT(F24:K24,$F$10:$K$10)"
+RUN-PEOPLE,support L1/L2/L3,scaling,<<TBC: tickets>>,[ASSUMPTION — confirm],0,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,"=SUM(F25:K25)","=SUMPRODUCT(F25:K25,$F$10:$K$10)"
+RUN-3P,licences / SaaS seats (check uplift clause),rising,<<TBC: seats>>,[given: <<TBC: contract>>],<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,"=SUM(F26:K26)","=SUMPRODUCT(F26:K26,$F$10:$K$10)"
+RUN-3P,third-party API calls,scaling,<<TBC: calls>>,[measured: <<TBC>>],<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,"=SUM(F27:K27)","=SUMPRODUCT(F27:K27,$F$10:$K$10)"
+RUN-3P,AI / token spend (from ai-spend-report),scaling,<<TBC: sessions>>,[measured: .foundry/metrics/events.jsonl],<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,"=SUM(F28:K28)","=SUMPRODUCT(F28:K28,$F$10:$K$10)"
+MAINTAIN,dependency upgrades + security patching,rising,,[ASSUMPTION — confirm],0,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,"=SUM(F29:K29)","=SUMPRODUCT(F29:K29,$F$10:$K$10)"
+MAINTAIN,runtime / platform end-of-life migration,step,<<TBC: EOL year>>,[measured: <<TBC: vendor support window>>],0,0,<<TBC>>,0,0,<<TBC>>,"=SUM(F30:K30)","=SUMPRODUCT(F30:K30,$F$10:$K$10)"
+MAINTAIN,compliance re-certification / pen test cycle,flat,,[given: <<TBC>>],0,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,"=SUM(F31:K31)","=SUMPRODUCT(F31:K31,$F$10:$K$10)"
+MAINTAIN,feature maintenance tax (% of build per year),rising,<<TBC: % — ASSUMPTION>>,[ASSUMPTION — confirm],0,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,"=SUM(F32:K32)","=SUMPRODUCT(F32:K32,$F$10:$K$10)"
+DECOMM,decommissioning project + data export + secure deletion,terminal,,[ASSUMPTION — confirm],0,0,0,0,0,<<TBC>>,"=SUM(F33:K33)","=SUMPRODUCT(F33:K33,$F$10:$K$10)"
+DECOMM,contract exit fees + egress on exit,terminal,,[given: <<TBC: contract clause>>],0,0,0,0,0,<<TBC>>,"=SUM(F34:K34)","=SUMPRODUCT(F34:K34,$F$10:$K$10)"
+DECOMM,archive retention after shutdown (extends beyond N),flat,<<TBC: retention years>>,[ASSUMPTION — confirm],0,0,0,0,0,<<TBC>>,"=SUM(F35:K35)","=SUMPRODUCT(F35:K35,$F$10:$K$10)"
+,,,,,,,,,,,,
+TOTALS,undiscounted total,,,,,,,,,,"=SUM(L11:L35)",
+TOTALS,discounted total (TCO),,,,,,,,,,,"=SUM(M11:M35)"
+TOTALS,annuity factor A(r;N),,,,"=(1-(1+$F$3)^-$F$4)/$F$3",,,,,,,for comparing options with different lifetimes
+TOTALS,equivalent annual cost (EAC),,,,"=M38/F39",,,,,,,compare EACs when lifetimes differ; never raw TCO
+TOTALS,largest single PV line,,,,"=MAX(M11:M35)",,,,,,,first target for sensitivity analysis
+,,,,,,,,,,,,
+SENSITIVITY,scenario,,,,TCO,,,,,,,re-run the model with the stated change
+,r = 0 (no discounting),,,,<<TBC: re-run>>,,,,,,,shows how much the discount rate is doing the work
+,r + 2pp,,,,<<TBC: re-run>>,,,,,,,
+,horizon N-2,,,,<<TBC: re-run>>,,,,,,,if the ranking flips the decision is a bet on lifetime
+,horizon N+2,,,,<<TBC: re-run>>,,,,,,,
+,pessimistic volume on all scaling lines,,,,<<TBC: re-run>>,,,,,,,the forecast justifying the project also prices the run cost
+,crossover vs alternative option,,,,<<TBC: volume/horizon at which the ranking flips>>,,,,,,,more useful than naming a winner

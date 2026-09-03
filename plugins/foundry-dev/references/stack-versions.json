@@ -1,0 +1,241 @@
+{
+  "kind": "foundry.stack-version-resolver",
+  "resolverVersion": 1,
+  "license": "Apache-2.0",
+  "verifiedOn": null,
+  "_comment": [
+    "This file contains NO version numbers by design. Foundry never hardcodes a version it has",
+    "not verified: a marketplace asset outlives the release it was written against, and a stale",
+    "pinned number is worse than no number because it is confidently wrong.",
+    "Instead this file is a RESOLVER. It tells an agent (a) how to read the versions the project",
+    "actually uses from files on disk, and (b) which upstream endpoint to query when the question",
+    "is 'what is current/supported today'.",
+    "'verifiedOn' stays null until a human or a CI job records a date on which the whole matrix",
+    "was checked against upstream. An agent that finds verifiedOn === null MUST treat every",
+    "'current release' claim as unknown and resolve it live before asserting it to the user."
+  ],
+  "policy": {
+    "onMissingEvidence": "state-unknown",
+    "neverDo": [
+      "Quote a 'latest' version from model memory.",
+      "Write a version number into pom.xml, build.gradle or package.json that was not read from the project or fetched from an upstream endpoint in this session.",
+      "Assume a feature exists because it exists in some version; probe for the feature instead."
+    ],
+    "alwaysDo": [
+      "Read the project's own build file first. The project's version beats any notion of 'latest'.",
+      "When a feature is version-gated, prove it with a probe command from 'featureProbes' rather than a version comparison.",
+      "Report resolved versions once per session into .foundry/blackboard/<wave>/stack-versions.json and reuse them."
+    ]
+  },
+  "detect": {
+    "java": {
+      "sources": [
+        {
+          "file": "pom.xml",
+          "how": "Read <java.version>, <maven.compiler.release> or <release> under maven-compiler-plugin.",
+          "command": "grep -nE '<(java\\.version|maven\\.compiler\\.(release|source|target))>' pom.xml"
+        },
+        {
+          "file": "build.gradle | build.gradle.kts",
+          "how": "Read the java toolchain languageVersion or sourceCompatibility.",
+          "command": "grep -nE 'languageVersion|sourceCompatibility|JavaLanguageVersion' build.gradle build.gradle.kts 2>/dev/null"
+        },
+        {
+          "file": ".sdkmanrc | .tool-versions | .java-version",
+          "how": "Toolchain pin used by the developer shell.",
+          "command": "cat .sdkmanrc .tool-versions .java-version 2>/dev/null"
+        },
+        {
+          "file": "runtime",
+          "how": "The JDK actually on PATH; compare with the pin and report a mismatch as a finding.",
+          "command": "java -version 2>&1 | head -1"
+        }
+      ]
+    },
+    "springBoot": {
+      "sources": [
+        {
+          "file": "pom.xml",
+          "how": "Read <parent> spring-boot-starter-parent <version>, or the spring-boot-dependencies BOM version in <dependencyManagement>.",
+          "command": "grep -n -A3 'spring-boot-starter-parent\\|spring-boot-dependencies' pom.xml"
+        },
+        {
+          "file": "build.gradle | build.gradle.kts | gradle/libs.versions.toml",
+          "how": "Read the org.springframework.boot plugin version or the version catalog entry.",
+          "command": "grep -rnE 'org\\.springframework\\.boot|springBoot' build.gradle build.gradle.kts gradle/libs.versions.toml 2>/dev/null"
+        },
+        {
+          "file": "resolved",
+          "how": "Authoritative: ask the build tool what it resolved, do not infer.",
+          "command": "./mvnw -q help:evaluate -Dexpression=project.parent.version -DforceStdout 2>/dev/null || ./gradlew -q dependencies --configuration runtimeClasspath 2>/dev/null | grep -m1 spring-boot"
+        }
+      ]
+    },
+    "springCloud": {
+      "sources": [
+        {
+          "file": "pom.xml | gradle/libs.versions.toml",
+          "how": "Read the spring-cloud-dependencies BOM version. It is train-named, not SemVer-aligned with Boot; the Boot/Cloud compatibility matrix is the binding constraint.",
+          "command": "grep -rn 'spring-cloud-dependencies\\|spring-cloud.version\\|springCloud' pom.xml build.gradle build.gradle.kts gradle/libs.versions.toml 2>/dev/null"
+        }
+      ]
+    },
+    "hibernate": {
+      "sources": [
+        {
+          "file": "resolved dependency tree",
+          "how": "Hibernate is normally managed by the Boot BOM. Read the resolved version, never a guessed one.",
+          "command": "./mvnw -q dependency:tree -Dincludes=org.hibernate.orm 2>/dev/null || ./gradlew -q dependencyInsight --dependency hibernate-core --configuration runtimeClasspath 2>/dev/null"
+        }
+      ]
+    },
+    "postgresql": {
+      "sources": [
+        {
+          "file": "live server",
+          "how": "Server version decides which SQL features and lock optimisations are available.",
+          "command": "psql \"$DATABASE_URL\" -tAc 'select version()'"
+        },
+        {
+          "file": "docker-compose.yml | compose.yaml",
+          "how": "Read the image tag used for local development.",
+          "command": "grep -rnE 'image:\\s*(docker\\.io/)?(library/)?postgres' docker-compose.yml compose.yaml compose.yml 2>/dev/null"
+        },
+        {
+          "file": "Testcontainers",
+          "how": "Read the image tag pinned in test sources; it must match the production major.",
+          "command": "grep -rn 'PostgreSQLContainer\\|postgres:' src/test --include=*.java --include=*.kt --include=*.properties --include=*.yml 2>/dev/null"
+        }
+      ]
+    },
+    "migrationTool": {
+      "sources": [
+        {
+          "file": "classpath + directories",
+          "how": "Detect which of Flyway or Liquibase is in use before writing any migration. If both are present, that is itself a finding.",
+          "command": "ls -d src/main/resources/db/migration src/main/resources/db/changelog 2>/dev/null; grep -rn 'flyway\\|liquibase' pom.xml build.gradle build.gradle.kts gradle/libs.versions.toml 2>/dev/null"
+        }
+      ]
+    },
+    "node": {
+      "sources": [
+        { "file": ".nvmrc", "how": "Authoritative pin for the developer shell and most CI images.", "command": "cat .nvmrc 2>/dev/null" },
+        { "file": "package.json", "how": "Read engines.node and packageManager.", "command": "grep -nE '\"(engines|node|packageManager)\"' package.json" },
+        { "file": "runtime", "how": "The Node actually on PATH.", "command": "node -v" }
+      ]
+    },
+    "angular": {
+      "sources": [
+        { "file": "package.json", "how": "Read @angular/core in dependencies; it is the version that matters, not the CLI.", "command": "grep -nE '\"@angular/(core|cli)\"' package.json" },
+        { "file": "angular.json", "how": "Read the builder ids in architect.build.builder to tell which build system the workspace uses.", "command": "grep -n '\"builder\"' angular.json" },
+        { "file": "resolved", "how": "Lockfile beats manifest ranges.", "command": "npm ls @angular/core --depth=0 2>/dev/null" }
+      ]
+    },
+    "containerBase": {
+      "sources": [
+        { "file": "Dockerfile", "how": "Base image tag and digest; a floating tag is a finding.", "command": "grep -nE '^FROM' Dockerfile*" }
+      ]
+    }
+  },
+  "featureProbes": {
+    "_comment": "Prefer a probe over a version comparison. A probe answers 'can I use this here', which is the real question.",
+    "springConfigurationProperty": {
+      "question": "Does configuration property X exist in the Spring Boot version this project resolves?",
+      "command": "./mvnw -q dependency:build-classpath -Dmdep.outputFile=/tmp/cp.txt >/dev/null 2>&1 && tr ':' '\\n' < /tmp/cp.txt | grep -m1 'spring-boot-[0-9]' | xargs -I{} unzip -p {} META-INF/spring-configuration-metadata.json | grep -o '\"name\": *\"<PROPERTY>\"'",
+      "alternative": "Start the app and query GET /actuator/configprops (requires management.endpoints.web.exposure.include to list configprops)."
+    },
+    "virtualThreads": {
+      "question": "Can this runtime use virtual threads at all?",
+      "command": "jshell -q -s <<< 'Thread.ofVirtual().unstarted(() -> {}); System.out.println(\"virtual-threads-available\");'"
+    },
+    "postgresFeature": {
+      "question": "Does this PostgreSQL server support feature X?",
+      "commands": [
+        "psql \"$DATABASE_URL\" -tAc \"select current_setting('server_version_num')::int\"",
+        "psql \"$DATABASE_URL\" -tAc \"select count(*) from pg_proc where proname = '<FUNCTION>'\"",
+        "psql \"$DATABASE_URL\" -tAc \"select name, setting from pg_settings where name = '<GUC>'\""
+      ]
+    },
+    "graalvmNative": {
+      "question": "Is a native image toolchain actually available?",
+      "command": "native-image --version 2>/dev/null || echo 'no native-image on PATH'"
+    }
+  },
+  "upstream": {
+    "_comment": "Use these only when the question is 'what is current or still supported'. Fetch, quote the fetch date, and never cache the answer into an asset file.",
+    "java": [
+      "https://endoflife.date/api/java.json",
+      "https://adoptium.net/temurin/releases/",
+      "https://www.oracle.com/java/technologies/java-se-support-roadmap.html"
+    ],
+    "springBoot": [
+      "https://spring.io/projects/spring-boot#support",
+      "https://repo1.maven.org/maven2/org/springframework/boot/spring-boot-starter-parent/maven-metadata.xml",
+      "https://endoflife.date/api/spring-boot.json"
+    ],
+    "springCloud": [
+      "https://spring.io/projects/spring-cloud#overview",
+      "https://repo1.maven.org/maven2/org/springframework/cloud/spring-cloud-dependencies/maven-metadata.xml"
+    ],
+    "hibernate": [
+      "https://hibernate.org/orm/releases/",
+      "https://repo1.maven.org/maven2/org/hibernate/orm/hibernate-core/maven-metadata.xml"
+    ],
+    "postgresql": [
+      "https://www.postgresql.org/support/versioning/",
+      "https://endoflife.date/api/postgresql.json"
+    ],
+    "flyway": [
+      "https://github.com/flyway/flyway/releases",
+      "https://repo1.maven.org/maven2/org/flywaydb/flyway-core/maven-metadata.xml"
+    ],
+    "liquibase": [
+      "https://github.com/liquibase/liquibase/releases",
+      "https://repo1.maven.org/maven2/org/liquibase/liquibase-core/maven-metadata.xml"
+    ],
+    "testcontainers": [
+      "https://github.com/testcontainers/testcontainers-java/releases",
+      "https://repo1.maven.org/maven2/org/testcontainers/testcontainers/maven-metadata.xml"
+    ],
+    "jooq": [
+      "https://github.com/jOOQ/jOOQ/releases",
+      "https://repo1.maven.org/maven2/org/jooq/jooq/maven-metadata.xml"
+    ],
+    "node": [
+      "https://nodejs.org/dist/index.json",
+      "https://endoflife.date/api/nodejs.json"
+    ],
+    "angular": [
+      "https://angular.dev/reference/releases",
+      "https://registry.npmjs.org/@angular/core",
+      "https://endoflife.date/api/angular.json"
+    ]
+  },
+  "standards": {
+    "_comment": "Specification identifiers referenced by foundry-dev assets. These are stable identifiers, not versions, but confirm the text at rfc-editor.org before quoting a clause.",
+    "problemDetails": "RFC 9457 (obsoletes RFC 7807)",
+    "sunsetHeader": "RFC 8594",
+    "deprecationHeader": "RFC 9745",
+    "webLinking": "RFC 8288",
+    "httpSemantics": "RFC 9110",
+    "conditionalRequests": "RFC 9110 s13 (ETag / If-Match)",
+    "semanticVersioning": "SemVer 2.0.0",
+    "openApi": "OpenAPI Specification 3.1",
+    "lookup": "https://www.rfc-editor.org/rfc/rfc<NUMBER>.html"
+  },
+  "reporting": {
+    "artifact": ".foundry/blackboard/<wave>/stack-versions.json",
+    "shape": {
+      "resolvedOn": "YYYY-MM-DD (the session date, passed in — do not call Date.now() in a workflow)",
+      "entries": [
+        {
+          "component": "springBoot",
+          "value": "as read from the project, or null",
+          "evidence": "file:line or the exact command whose output produced it",
+          "confidence": "high | medium | low"
+        }
+      ],
+      "unresolved": ["component names that could not be evidenced"]
+    }
+  }
+}

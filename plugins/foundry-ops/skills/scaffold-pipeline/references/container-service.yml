@@ -1,0 +1,167 @@
+# Containerised service: build once, scan, SBOM, attest, publish BY DIGEST.
+# Resolve every <PLACEHOLDER>:
+#   SHA    -> gh api repos/<OWNER>/<REPO>/commits/<TAG> --jq '.sha'
+#   DIGEST -> docker buildx imagetools inspect <IMAGE>:<TAG> --format '{{ .Manifest.Digest }}'
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Release: NEVER cancel in flight. A cancelled publish leaves a partial manifest.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: <REGISTRY>                       # e.g. ghcr.io
+  IMAGE: ${{ github.repository }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write          # push to the registry
+      id-token: write          # OIDC: keyless signing / provenance
+      attestations: write      # attach the provenance attestation
+    outputs:
+      digest: ${{ steps.push.outputs.digest }}
+      image: ${{ env.REGISTRY }}/${{ github.repository }}
+    steps:
+      - uses: actions/checkout@<SHA> # <TAG>
+        with: { persist-credentials: false }
+
+      - uses: docker/setup-buildx-action@<SHA> # <TAG>
+
+      # Registry login. For a non-GitHub registry use OIDC federation
+      # (see references/pinning-and-oidc.md) rather than a static password.
+      - uses: docker/login-action@<SHA> # <TAG>
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Tags are for humans. The digest below is the identity that travels.
+      - id: meta
+        uses: docker/metadata-action@<SHA> # <TAG>
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,format=long
+
+      - id: push
+        uses: docker/build-push-action@<SHA> # <TAG>
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+          provenance: true
+          sbom: true
+          # Registry-backed layer cache. mode=max caches intermediate stages too,
+          # which is what makes a multi-stage build fast; it costs registry storage.
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE }}:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE }}:buildcache,mode=max
+          build-args: |
+            SOURCE_DATE_EPOCH=${{ github.event.repository.pushed_at }}
+
+      # Provenance attestation bound to the digest. Consult this action's own
+      # documentation for the SLSA level it currently attests - do not assert one here.
+      - uses: actions/attest-build-provenance@<SHA> # <TAG>
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+
+  scan:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: read
+      security-events: write
+    steps:
+      # --ignore-unfixed: gate on what the team can actually act on. A gate that
+      # fires on an unfixable CVE gets bypassed, and then it protects nothing.
+      # Unfixed findings are still recorded in the SARIF upload for triage.
+      - name: Scan by digest
+        uses: <SCANNER-OWNER>/<SCANNER-REPO>@<SHA> # <TAG>
+        with:
+          image-ref: ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          format: sarif
+          output: trivy.sarif
+
+      - uses: github/codeql-action/upload-sarif@<SHA> # <TAG>
+        if: always()
+        with: { sarif_file: trivy.sarif }
+
+  sbom:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: read
+      id-token: write
+      attestations: write
+    steps:
+      # SBOM from the FINAL IMAGE, not the source tree: the source tree does not
+      # know which OS packages and transitive libraries actually got linked in.
+      - uses: <SBOM-ACTION-OWNER>/<SBOM-ACTION-REPO>@<SHA> # <TAG>
+        with:
+          image: ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}
+          format: cyclonedx-json
+          output-file: sbom.cdx.json
+
+      - uses: actions/attest-sbom@<SHA> # <TAG>
+        with:
+          subject-name: ${{ needs.build.outputs.image }}
+          subject-digest: ${{ needs.build.outputs.digest }}
+          sbom-path: sbom.cdx.json
+          push-to-registry: true
+
+      - uses: actions/upload-artifact@<SHA> # <TAG>
+        with: { name: sbom, path: sbom.cdx.json, retention-days: 365 }
+
+  verify:
+    needs: [build, scan, sbom]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: read
+      id-token: write
+    steps:
+      # Verify what you published, from a clean job, before anything promotes it.
+      # An unverified attestation is decoration.
+      - env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REF: oci://${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}
+        run: |
+          set -euo pipefail
+          gh attestation verify "$REF" --repo "${{ github.repository }}"
+          echo "verified digest: ${{ needs.build.outputs.digest }}" >> "$GITHUB_STEP_SUMMARY"
+
+  # Deploy is a separate, environment-gated workflow. It consumes the DIGEST,
+  # it never rebuilds. See references/reusable-deploy.yml.
+  deploy-staging:
+    needs: verify
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: staging
+      image: ${{ needs.build.outputs.image }}
+      digest: ${{ needs.build.outputs.digest }}
+    secrets: inherit           # replace with named secrets when caller and callee diverge

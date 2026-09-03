@@ -1,0 +1,18 @@
+{
+  "indexTokenBudget": 3000,
+  "handoffSummaryTokenBudget": 300,
+  "enforcement": "gate",
+  "protectedPaths": [
+    ".github/workflows/**",
+    "**/*.lock",
+    "package-lock.json",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "secretScan": true,
+  "verifyOnStop": true,
+  "memoryRetrieval": {
+    "maxFacts": 8,
+    "minScore": 1
+  }
+}

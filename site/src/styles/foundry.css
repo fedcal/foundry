@@ -1,0 +1,54 @@
+/* Foundry documentation theme.
+   Light and dark are both defined explicitly: nothing inherits a colour it did not declare. */
+
+:root {
+  --sl-color-accent-low: #2b1a12;
+  --sl-color-accent: #c2622f;
+  --sl-color-accent-high: #f0b48a;
+  --foundry-rule: color-mix(in srgb, var(--sl-color-gray-5) 60%, transparent);
+}
+
+:root[data-theme='light'] {
+  --sl-color-accent-low: #fbe6d8;
+  --sl-color-accent: #a8481c;
+  --sl-color-accent-high: #52240e;
+}
+
+.foundry-footer {
+  margin-top: 3rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--foundry-rule);
+  font-size: var(--sl-text-sm);
+  color: var(--sl-color-gray-3);
+}
+
+.foundry-footer__main {
+  margin: 0 0 0.4rem;
+}
+
+.foundry-footer__main a {
+  color: var(--sl-color-text-accent);
+  text-decoration: none;
+}
+
+.foundry-footer__main a:hover,
+.foundry-footer__main a:focus-visible {
+  text-decoration: underline;
+}
+
+.foundry-footer__note {
+  margin: 0;
+  font-size: var(--sl-text-xs);
+  color: var(--sl-color-gray-4);
+}
+
+/* Wide tables and code blocks scroll inside their own box, never the page. */
+.sl-markdown-content table {
+  display: block;
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.sl-markdown-content :is(h2, h3) {
+  scroll-margin-top: 5rem;
+}

@@ -1,0 +1,39 @@
+line,driver,provenance,M1,M2,M3,M4,M5,M6,M7,M8,M9,M10,M11,M12,FY total
+DRIVERS,,,,,,,,,,,,,,,
+opening customers,prior closing,[given],<<TBC>>,"=D6","=E6","=F6","=G6","=H6","=I6","=J6","=K6","=L6","=M6","=N6",
+new customers,channel with a CAPACITY LIMIT,[ASSUMPTION — confirm],<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,"=SUM(D4:O4)"
+monthly churn rate,cohort retention,[ASSUMPTION — confirm],<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,rate — do not sum
+closing customers,formula,derived,"=D3*(1-D5)+D4","=E3*(1-E5)+E4","=F3*(1-F5)+F4","=G3*(1-G5)+G4","=H3*(1-H5)+H4","=I3*(1-I5)+I4","=J3*(1-J5)+J4","=K3*(1-K5)+K4","=L3*(1-L5)+L4","=M3*(1-M5)+M4","=N3*(1-N5)+N4","=O3*(1-O5)+O4",closing balance — do not sum
+ARPA,price x plan mix,[ASSUMPTION — confirm],<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,average — do not sum
+,,,,,,,,,,,,,,,
+P&L,,,,,,,,,,,,,,,
+Revenue,customers x ARPA,derived,"=D6*D7","=E6*E7","=F6*F7","=G6*G7","=H6*H7","=I6*I7","=J6*J7","=K6*K7","=L6*L7","=M6*M7","=N6*N7","=O6*O7","=SUM(D10:O10)"
+COGS: hosting,requests / tenants,[measured: finops-analyst],<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,"=SUM(D11:O11)"
+COGS: third-party APIs,transactions,[measured],<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,"=SUM(D12:O12)"
+COGS: AI / token spend,sessions or features,[measured: ai-spend-report],<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,"=SUM(D13:O13)"
+COGS: support delivery,tickets (users AND defect rate),[ASSUMPTION — confirm],<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,"=SUM(D14:O14)"
+Gross profit,formula,derived,"=D10-SUM(D11:D14)","=E10-SUM(E11:E14)","=F10-SUM(F11:F14)","=G10-SUM(G11:G14)","=H10-SUM(H11:H14)","=I10-SUM(I11:I14)","=J10-SUM(J11:J14)","=K10-SUM(K11:K14)","=L10-SUM(L11:L14)","=M10-SUM(M11:M14)","=N10-SUM(N11:N14)","=O10-SUM(O11:O14)","=SUM(D15:O15)"
+GM%,formula,derived,"=IF(D10=0,"""",D15/D10)","=IF(E10=0,"""",E15/E10)","=IF(F10=0,"""",F15/F10)","=IF(G10=0,"""",G15/G10)","=IF(H10=0,"""",H15/H10)","=IF(I10=0,"""",I15/I10)","=IF(J10=0,"""",J15/J10)","=IF(K10=0,"""",K15/K10)","=IF(L10=0,"""",L15/L10)","=IF(M10=0,"""",M15/M10)","=IF(N10=0,"""",N15/N10)","=IF(O10=0,"""",O15/O10)","=IF(P10=0,"""",P15/P10)"
+S&M,headcount + programme,[given],<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,"=SUM(D17:O17)"
+R&D,headcount,[given],<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,"=SUM(D18:O18)"
+G&A,headcount + fixed (steps),[given],<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,"=SUM(D19:O19)"
+EBITDA,formula,derived,"=D15-SUM(D17:D19)","=E15-SUM(E17:E19)","=F15-SUM(F17:F19)","=G15-SUM(G17:G19)","=H15-SUM(H17:H19)","=I15-SUM(I17:I19)","=J15-SUM(J17:J19)","=K15-SUM(K17:K19)","=L15-SUM(L17:L19)","=M15-SUM(M17:M19)","=N15-SUM(N17:N19)","=O15-SUM(O17:O19)","=SUM(D20:O20)"
+D&A,capex schedule,modelling convention not accounting policy,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,"=SUM(D21:O21)"
+EBIT,formula,derived,"=D20-D21","=E20-E21","=F20-F21","=G20-G21","=H20-H21","=I20-I21","=J20-J21","=K20-K21","=L20-L21","=M20-M21","=N20-N21","=O20-O21","=SUM(D22:O22)"
+,,,,,,,,,,,,,,,
+BREAK-EVEN,item,,value,,,,,,,,,,,,formula
+,contribution margin % (annual),,"=IF(P10=0,"""",P15/P10)",,,,,,,,,,,,gross profit / revenue
+,fixed costs (annual),,"=P17+P18+P19+P21",,,,,,,,,,,,S&M + R&D + G&A + D&A
+,break-even revenue R*,,"=IF(D25=0,"""",D26/D25)",,,,,,,,,,,,fixed costs / CM%
+,break-even customers Q*,,"=IF(AVERAGE(D7:O7)=0,"""",D27/(AVERAGE(D7:O7)*12))",,,,,,,,,,,,R* is ANNUAL revenue and ARPA is MONTHLY — divide by ARPA x 12 or the answer is 12x too high
+,operating leverage,,"=IF(P22=0,"""",P15/P22)",,,,,,,,,,,,contribution margin / EBIT
+,margin of safety,,"=IF(P10=0,"""",(P10-D27)/P10)",,,,,,,,,,,,(revenue - R*) / revenue
+,break-even MONTH (P&L),,<<TBC: first month EBIT>0>>,,,,,,,,,,,,read across row 22
+,break-even MONTH (CASH),,<<TBC: from cashflow.csv>>,,,,,,,,,,,,almost always later — this one sets the funding need
+,,,,,,,,,,,,,,,
+CHECKS,item,,status,,,,,,,,,,,,
+,every input cell labelled [measured] / [given] / <<TBC>>,,<<TBC>>,,,,,,,,,,,,no unlabelled constants
+,no hardcoded number inside a formula,,<<TBC>>,,,,,,,,,,,,inputs live in the DRIVERS block
+,new customers respect the channel capacity limit,,<<TBC>>,,,,,,,,,,,,name the month the ceiling is hit
+,nominal or real convention applied consistently,,<<TBC>>,,,,,,,,,,,,
+,S&M here reconciles with the CAC in unit-economics.csv,,<<TBC>>,,,,,,,,,,,,the classic silent inconsistency

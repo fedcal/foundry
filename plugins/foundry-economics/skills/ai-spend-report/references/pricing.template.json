@@ -1,0 +1,34 @@
+{
+  "_README": "Copy to .foundry/economics/pricing.json and fill from your provider's CURRENT published pricing page. Zeros are placeholders, not prices: any model whose entries are all zero is treated as unpriced and reported as <<UNPRICED>>. Never let an AI agent populate these values from memory.",
+  "currency": "EUR",
+  "source": "<<TBC: exact URL or document, and who read it>>",
+  "asOf": "<<TBC: YYYY-MM-DD the prices were read>>",
+  "notes": "<<TBC: tier, region, batch/priority mode, contractual discount, and anything else that makes these prices specific to this project>>",
+  "models": {
+    "<<TBC: model-id-1>>": {
+      "inputPerMTok": 0,
+      "outputPerMTok": 0,
+      "cacheWritePerMTok": 0,
+      "cacheReadPerMTok": 0,
+      "_comment": "price per 1,000,000 tokens, in the currency above"
+    },
+    "<<TBC: model-id-2>>": {
+      "inputPerMTok": 0,
+      "outputPerMTok": 0,
+      "cacheWritePerMTok": 0,
+      "cacheReadPerMTok": 0
+    },
+    "<<TBC: model-id-3>>": {
+      "inputPerMTok": 0,
+      "outputPerMTok": 0,
+      "cacheWritePerMTok": 0,
+      "cacheReadPerMTok": 0
+    }
+  },
+  "otherServices": {
+    "<<TBC: e.g. web-search-per-1k-calls>>": {
+      "unit": "<<TBC>>",
+      "pricePerUnit": 0
+    }
+  }
+}

@@ -1,0 +1,39 @@
+name: New agent or skill
+description: Propose a new asset for an existing vertical.
+labels: [asset, needs-triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Read [AUTHORING.md](https://github.com/fedcal/foundry/blob/main/AUTHORING.md) first.
+        The commonest rejection reason is an asset that would apply to any project unchanged.
+  - type: dropdown
+    id: vertical
+    attributes:
+      label: Vertical
+      options: [foundry-core, foundry-research, foundry-dev, foundry-quality, foundry-ops, foundry-pmo, foundry-economics, foundry-legal, foundry-oss]
+    validations: { required: true }
+  - type: textarea
+    id: purpose
+    attributes:
+      label: What it does, and when Claude should reach for it
+      description: This becomes the `description` frontmatter — it is the routing key.
+    validations: { required: true }
+  - type: textarea
+    id: not
+    attributes:
+      label: What it deliberately does NOT cover
+      description: Required. An asset without a boundary overlaps something else.
+    validations: { required: true }
+  - type: textarea
+    id: exit
+    attributes:
+      label: Measurable exit criteria
+      description: Numbers, thresholds, gates. Not "produces good output".
+    validations: { required: true }
+  - type: input
+    id: contract
+    attributes:
+      label: Output contract
+      description: Which schema its output conforms to, or "new — describe below".
+    validations: { required: true }

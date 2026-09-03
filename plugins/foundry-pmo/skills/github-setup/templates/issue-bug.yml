@@ -1,0 +1,115 @@
+name: Bug report
+description: Something behaves differently from its acceptance criteria
+title: "[bug] "
+labels: ["type:fix", "status:triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A report that cannot be reproduced cannot be fixed. The fields below are the minimum
+        needed to reproduce; each one you leave vague adds a round trip.
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      description: What should happen. Quote the acceptance criterion or REQ id if you know it.
+      placeholder: "Given a card expiring last month, when I submit checkout, then no authorisation is attempted and I see 'This card has expired'."
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+      description: What happened instead. Include the exact message, code or screenshot.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Numbered, from a known starting state. Include test data where it matters.
+      placeholder: |
+        1. Sign in as a shopper with a verified email
+        2. Add SKU ABC-123 to the basket
+        3. Enter card 4000 0000 0000 0069 (expired)
+        4. Submit
+    validations:
+      required: true
+
+  - type: input
+    id: frequency
+    attributes:
+      label: Reproduction rate
+      description: Every time, or how often out of how many attempts? Intermittent bugs need this.
+      placeholder: "5/5 attempts"
+    validations:
+      required: true
+
+  - type: input
+    id: first-seen
+    attributes:
+      label: First observed
+      description: Date, and the release or commit if known. "Worked before X" is high-value information.
+      placeholder: "2026-08-25, first seen after v1.3.2"
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Browser/OS/device, app version, environment (production, staging), account type.
+      placeholder: |
+        Safari 17.4 / macOS 14.5
+        Production, shopper account (standard tier), EU region
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      description: |
+        sev:1 production down or data loss - sev:2 core flow broken, workaround exists -
+        sev:3 degraded experience - sev:4 cosmetic
+      options:
+        - "sev:1 - critical"
+        - "sev:2 - major"
+        - "sev:3 - minor"
+        - "sev:4 - trivial"
+    validations:
+      required: true
+
+  - type: input
+    id: impact
+    attributes:
+      label: Who and how many are affected
+      description: A number or a proportion if you have one. This drives prioritisation.
+      placeholder: "All shoppers using an expired card - roughly 200/day based on decline logs"
+    validations:
+      required: true
+
+  - type: input
+    id: correlation
+    attributes:
+      label: Correlation id / request id / trace
+      description: If the error surface shows one, paste it. It usually saves an hour of searching.
+
+  - type: textarea
+    id: workaround
+    attributes:
+      label: Known workaround
+      description: If there is one, state it. If there is none, say so explicitly.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched open and closed issues for a duplicate
+          required: true
+        - label: This report contains no secrets, tokens or personal data
+          required: true

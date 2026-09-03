@@ -1,0 +1,96 @@
+name: Validate
+
+# Every asset in this repository must satisfy AUTHORING.md before it is published.
+# Actions are pinned by commit SHA: a moving tag is a supply-chain hole.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  assets:
+    name: Assets conform to AUTHORING.md
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+      - name: Validate plugin manifests, agents, skills, hooks and workflows
+        run: node scripts/validate-assets.mjs
+      - name: Kernel unit tests
+        run: node --test 'plugins/foundry-core/test/*.test.mjs'
+      - name: Syntax check every executable asset
+        run: |
+          set -euo pipefail
+          fail=0
+          while IFS= read -r f; do
+            node --check "$f" || { echo "syntax error: $f"; fail=1; }
+          done < <(find plugins scripts -name '*.mjs' -o -name '*.js' | sort)
+          exit $fail
+
+  contracts:
+    name: Contract schemas are self-consistent
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+      - name: Every schema parses and declares its identity
+        run: |
+          set -euo pipefail
+          for f in plugins/foundry-core/schemas/*.schema.json; do
+            node -e "
+              const s = require('./$f');
+              const id = '$(basename "$f" .schema.json)';
+              if (!s.\$id?.endsWith(id + '.schema.json')) { console.error('$f: \$id does not match filename'); process.exit(1); }
+              if (s.properties?.schema?.const !== id) { console.error('$f: properties.schema.const must be ' + id); process.exit(1); }
+              if (s.additionalProperties !== false) { console.error('$f: contracts must set additionalProperties:false'); process.exit(1); }
+            "
+          done
+          echo "all contract schemas consistent"
+
+  site:
+    name: Documentation site builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+      - run: npm ci
+        working-directory: site
+      - run: npm run build
+        working-directory: site
+
+  secrets:
+    name: No credentials committed
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Scan tracked files with the same rules the write gate uses
+        run: |
+          set -euo pipefail
+          patterns='AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9]{36,}|sk-ant-[A-Za-z0-9_-]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----'
+          # Vendor-published documentation examples are filtered out by value, not by excluding
+          # whole files: excluding a file would create a place where a real secret could hide.
+          examples='AKIAIOSFODNN7EXAMPLE|AKIAI44QH8DHBEXAMPLE|wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY'
+          # No file is excluded: an excluded file is a permanent place for a real
+          # secret to hide. The value filter below covers the vendor doc examples.
+          if git grep -nIE "$patterns" -- . | grep -vE "$examples"; then
+            echo "::error::potential credential found in tracked files"
+            exit 1
+          fi
+          echo "no credentials found"

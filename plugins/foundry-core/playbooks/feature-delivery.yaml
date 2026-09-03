@@ -1,0 +1,60 @@
+# Foundry playbook — deliver a feature end to end.
+# Consumed by the `orchestrate` skill and the foundry-orchestrator agent.
+id: feature-delivery
+description: Analysis, parallel implementation, convergence review.
+goal: "{{goal}}"
+
+waves:
+  - id: analysis
+    description: Establish what to build and why before anyone writes code.
+    parallel:
+      - agent: requirements-analyst
+        contract: requirement.v1
+      - agent: solution-architect
+        contract: adr.v1
+      - agent: security-architect
+        contract: risk.v1
+      - agent: ux-architect
+        contract: review.v1
+    gate:
+      all_artifacts_valid: true
+      requirements_have_acceptance_criteria: true
+      every_threat_has_a_mitigation_and_a_test: true
+    on_gate_failure: redispatch_once_then_escalate
+
+  - id: implementation
+    description: Build the parts in parallel, each in its own worktree.
+    inputs_from: analysis
+    parallel:
+      - agent: spring-engineer
+        isolation: worktree
+      - agent: angular-engineer
+        isolation: worktree
+      - agent: persistence-engineer
+        isolation: worktree
+    gate:
+      tests_written_before_implementation: true
+      project_test_command_passes: true
+      no_stubbed_acceptance_criteria: true
+
+  - id: convergence
+    description: Cross-check the seams and confirm the goal is actually met.
+    inputs_from: implementation
+    sequential:
+      - agent: appsec-reviewer
+        contract: review.v1
+      - agent: accessibility-engineer
+        contract: review.v1
+      - agent: cost-engineer
+        contract: estimate.v1
+      - agent: foundry-orchestrator
+        contract: handoff.v1
+    gate:
+      no_critical_or_high_findings_open: true
+      acceptance_criteria_verified_end_to_end: true
+
+escalate_to_user:
+  - a gate fails twice
+  - two specialists disagree on something material
+  - the token or cost budget would be exceeded
+  - an irreversible action is required that was not explicitly authorised

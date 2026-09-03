@@ -1,0 +1,20 @@
+Foundry for Claude Code
+Copyright 2026 Federico Calò
+
+This product includes software developed by Federico Calò (https://federicocalo.dev).
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Foundry is an independent open source project. It is not affiliated with,
+endorsed by, or sponsored by Anthropic. "Claude" and "Claude Code" are
+trademarks of Anthropic, PBC, used here only to identify the tool Foundry
+extends.
+
+Foundry declares an optional runtime dependency on the "superpowers" plugin
+(https://github.com/obra/superpowers, MIT licence). No superpowers code is
+vendored, copied or redistributed in this repository; Foundry invokes it when
+it is installed and degrades gracefully when it is not.

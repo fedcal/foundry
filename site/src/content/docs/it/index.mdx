@@ -1,0 +1,64 @@
+---
+title: Foundry
+description: Agenti, skill, hook, MCP, memoria governata e pratiche di rilascio per Claude Code, distribuiti come marketplace di plugin installabili.
+template: splash
+hero:
+  tagline: Lo stack di ingegneria senior per Claude Code. Dodici plugin, un kernel, memoria governata e un budget di token davvero misurabile.
+  actions:
+    - text: Installalo
+      link: /foundry/it/start/installation/
+      icon: right-arrow
+      variant: primary
+    - text: Vedi su GitHub
+      link: https://github.com/fedcal/foundry
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## Che cos'è
+
+Foundry è un marketplace di dodici plugin per Claude Code che trasformano un assistente generico in
+un insieme di specialisti che lavorano come colleghi senior: consultano le decisioni già prese
+prima di proporne di nuove, si passano il lavoro attraverso contratti validati, non dichiarano
+riuscito ciò che non hanno verificato e tengono il costo della sessione dentro un budget
+ispezionabile.
+
+<CardGrid>
+  <Card title="Memoria governata">
+    Quattro livelli — scratch, fatti, runbook, decisioni. Di default entra in contesto solo un
+    indice da 4000 token; tutto il resto si recupera su richiesta tramite uno strumento MCP.
+  </Card>
+  <Card title="Contratti fra agenti">
+    Dieci JSON Schema versionati. Un hook valida ogni passaggio di consegne e rimanda l'artefatto
+    non conforme all'agente che lo ha scritto.
+  </Card>
+  <Card title="Gate con una via d'uscita">
+    Comandi distruttivi, scritture di segreti e dichiarazioni di completamento non verificate
+    vengono bloccati — sempre con il motivo e con un override documentato e a scadenza.
+  </Card>
+  <Card title="Un budget di token misurabile">
+    Un context firewall limita ciò che un subagente può restituire, il routing dei modelli allinea
+    costo e compito, e `foundry tokens` stampa quanto costa davvero la configurazione per sessione.
+  </Card>
+</CardGrid>
+
+## Installazione
+
+```bash
+/plugin marketplace add fedcal/foundry
+/plugin install foundry-core@foundry
+```
+
+Poi scegli i plugin che servono al lavoro in corso, oppure applica un profilo:
+
+```bash
+foundry profile angular-spring-enterprise
+```
+
+## Che cosa non è
+
+Foundry non sostituisce [superpowers](https://github.com/obra/superpowers): ne dipende e gli delega
+sviluppo guidato dai test, disciplina di debugging e verifica del completamento invece di
+reimplementarli. Non è un modello, non è un servizio ospitato e non è affiliato ad Anthropic.

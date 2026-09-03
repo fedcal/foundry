@@ -1,0 +1,37 @@
+id,label,role,unit,optimistic,likely,pessimistic,expected,sigma,variance,ratio_gate,variance_share,rate,cost,provenance,notes
+LEAF-01,<<TBC: leaf description — one role could finish it in a sprint>>,<<TBC: role>>,days,<<TBC: o>>,<<TBC: m>>,<<TBC: p>>,"=(E2+4*F2+G2)/6","=(G2-E2)/6","=I2^2","=IF(E2=0,""SPLIT: o=0"",IF(G2/E2<1.5,""TOO NARROW"",IF(G2/E2>10,""SPLIT"",""OK"")))","=IF($E$13=0,"""",J2/$E$13)","=IFERROR(VLOOKUP(C2,$B$25:$E$29,4,FALSE),"""")","=IFERROR(IF(M2="""","""",H2*M2),""<<TBC rate>>"")",[ASSUMPTION — confirm],
+LEAF-02,<<TBC>>,<<TBC: role>>,days,<<TBC: o>>,<<TBC: m>>,<<TBC: p>>,"=(E3+4*F3+G3)/6","=(G3-E3)/6","=I3^2","=IF(E3=0,""SPLIT: o=0"",IF(G3/E3<1.5,""TOO NARROW"",IF(G3/E3>10,""SPLIT"",""OK"")))","=IF($E$13=0,"""",J3/$E$13)","=IFERROR(VLOOKUP(C3,$B$25:$E$29,4,FALSE),"""")","=IFERROR(IF(M3="""","""",H3*M3),""<<TBC rate>>"")",[ASSUMPTION — confirm],
+LEAF-03,<<TBC>>,<<TBC: role>>,days,<<TBC: o>>,<<TBC: m>>,<<TBC: p>>,"=(E4+4*F4+G4)/6","=(G4-E4)/6","=I4^2","=IF(E4=0,""SPLIT: o=0"",IF(G4/E4<1.5,""TOO NARROW"",IF(G4/E4>10,""SPLIT"",""OK"")))","=IF($E$13=0,"""",J4/$E$13)","=IFERROR(VLOOKUP(C4,$B$25:$E$29,4,FALSE),"""")","=IFERROR(IF(M4="""","""",H4*M4),""<<TBC rate>>"")",[ASSUMPTION — confirm],
+LEAF-04,<<TBC>>,<<TBC: role>>,days,<<TBC: o>>,<<TBC: m>>,<<TBC: p>>,"=(E5+4*F5+G5)/6","=(G5-E5)/6","=I5^2","=IF(E5=0,""SPLIT: o=0"",IF(G5/E5<1.5,""TOO NARROW"",IF(G5/E5>10,""SPLIT"",""OK"")))","=IF($E$13=0,"""",J5/$E$13)","=IFERROR(VLOOKUP(C5,$B$25:$E$29,4,FALSE),"""")","=IFERROR(IF(M5="""","""",H5*M5),""<<TBC rate>>"")",[ASSUMPTION — confirm],
+LEAF-05,<<TBC>>,<<TBC: role>>,days,<<TBC: o>>,<<TBC: m>>,<<TBC: p>>,"=(E6+4*F6+G6)/6","=(G6-E6)/6","=I6^2","=IF(E6=0,""SPLIT: o=0"",IF(G6/E6<1.5,""TOO NARROW"",IF(G6/E6>10,""SPLIT"",""OK"")))","=IF($E$13=0,"""",J6/$E$13)","=IFERROR(VLOOKUP(C6,$B$25:$E$29,4,FALSE),"""")","=IFERROR(IF(M6="""","""",H6*M6),""<<TBC rate>>"")",[ASSUMPTION — confirm],
+LEAF-06,<<TBC>>,<<TBC: role>>,days,<<TBC: o>>,<<TBC: m>>,<<TBC: p>>,"=(E7+4*F7+G7)/6","=(G7-E7)/6","=I7^2","=IF(E7=0,""SPLIT: o=0"",IF(G7/E7<1.5,""TOO NARROW"",IF(G7/E7>10,""SPLIT"",""OK"")))","=IF($E$13=0,"""",J7/$E$13)","=IFERROR(VLOOKUP(C7,$B$25:$E$29,4,FALSE),"""")","=IFERROR(IF(M7="""","""",H7*M7),""<<TBC rate>>"")",[ASSUMPTION — confirm],
+LEAF-07,<<TBC>>,<<TBC: role>>,days,<<TBC: o>>,<<TBC: m>>,<<TBC: p>>,"=(E8+4*F8+G8)/6","=(G8-E8)/6","=I8^2","=IF(E8=0,""SPLIT: o=0"",IF(G8/E8<1.5,""TOO NARROW"",IF(G8/E8>10,""SPLIT"",""OK"")))","=IF($E$13=0,"""",J8/$E$13)","=IFERROR(VLOOKUP(C8,$B$25:$E$29,4,FALSE),"""")","=IFERROR(IF(M8="""","""",H8*M8),""<<TBC rate>>"")",[ASSUMPTION — confirm],
+LEAF-08,<<TBC>>,<<TBC: role>>,days,<<TBC: o>>,<<TBC: m>>,<<TBC: p>>,"=(E9+4*F9+G9)/6","=(G9-E9)/6","=I9^2","=IF(E9=0,""SPLIT: o=0"",IF(G9/E9<1.5,""TOO NARROW"",IF(G9/E9>10,""SPLIT"",""OK"")))","=IF($E$13=0,"""",J9/$E$13)","=IFERROR(VLOOKUP(C9,$B$25:$E$29,4,FALSE),"""")","=IFERROR(IF(M9="""","""",H9*M9),""<<TBC rate>>"")",[ASSUMPTION — confirm],
+,,,,,,,,,,,,,,,
+ROLLUP,metric,,,value,,,,,,,,,,,formula shown so a reviewer can re-derive it
+,E_total (sum of expected),,,"=SUM(H2:H9)",,,,,,,,,,,sum of PERT expected values; correlation-independent
+,Var_indep (sum of variances),,,"=SUM(J2:J9)",,,,,,,,,,,valid ONLY if leaves are independent
+,sigma_indep,,,"=SQRT(E13)",,,,,,,,,,,square root of Var_indep
+,n (leaf count),,,"=COUNT(H2:H9)",,,,,,,,,,,drives the correlation inflation factor
+,rho (pairwise correlation — SET THIS AND STATE WHY),,,0.3,,,,,,,,,,,PLACEHOLDER. rho=0 claims a bad week hits one task only
+,sigma_total,,,"=E14*SQRT(1+E16*(E15-1))",,,,,,,,,,,sigma_indep * sqrt(1 + rho*(n-1))
+,p50,,,"=E12",,,,,,,,,,,near-symmetric leaves only; if strongly skewed the p50 is optimistic
+,p80,,,"=E12+0.84*E17",,,,,,,,,,,commit here unless there is a reason not to
+,p95,,,"=E12+1.64*E17",,,,,,,,,,,fixed-price or regulatory-deadline level
+,max variance share (investigate if > 0.4),,,"=MAX(L2:L9)",,,,,,,,,,,one leaf dominating the tail weakens the normal approximation
+,expected cost total,,,"=SUM(N2:N9)",,,,,,,,,,,effort x rate per role; convert to money only at the end
+,,,,,,,,,,,,,,,
+RATES,role,,unit,rate per unit,,,,,,,,,,,every rate is [given] or a visible placeholder
+,<<TBC: role name — must match column C exactly>>,,days,<<TBC: rate>>,,,,,,,,,,,
+,<<TBC: role name>>,,days,<<TBC: rate>>,,,,,,,,,,,
+,<<TBC: role name>>,,days,<<TBC: rate>>,,,,,,,,,,,
+,<<TBC: role name>>,,days,<<TBC: rate>>,,,,,,,,,,,
+,<<TBC: role name>>,,days,<<TBC: rate>>,,,,,,,,,,,
+,,,,,,,,,,,,,,,
+BASIS,item,,,value,,,,,,,,,,,fill before any number is produced
+,confidence class (order-of-magnitude / budgetary / definitive),,,<<TBC>>,,,,,,,,,,,goes into estimate.v1 assumptions[0]
+,scope maturity evidence,,,<<TBC: which requirements signed off / interfaces specified>>,,,,,,,,,,,
+,currency,,,EUR,,,,,,,,,,,estimate.v1 default
+,availability factor (effort -> calendar),,,<<TBC>>,,,,,,,,,,,never 1.0
+,working days per month,,,<<TBC>>,,,,,,,,,,,
+,commitment percentile,,,<<TBC: p50 / p80 / p95>>,,,,,,,,,,,state who carries the gap from p50

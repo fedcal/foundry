@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin.json",
+  "name": "foundry-quality",
+  "displayName": "Foundry Quality",
+  "version": "0.1.0",
+  "description": "Test strategy, TDD enforcement, contract and E2E testing, performance engineering, observability and SRE practice.",
+  "author": {
+    "name": "Federico Calò",
+    "url": "https://federicocalo.dev"
+  },
+  "homepage": "https://fedcal.github.io/foundry",
+  "repository": "https://github.com/fedcal/foundry",
+  "license": "Apache-2.0",
+  "keywords": [
+    "claude-code",
+    "foundry",
+    "testing",
+    "tdd",
+    "performance",
+    "observability",
+    "sre"
+  ],
+  "metadata": {
+    "foundry.vertical": "quality",
+    "foundry.contracts": "v1"
+  },
+  "dependencies": [
+    {
+      "name": "foundry-core",
+      "version": "^0.1.0"
+    }
+  ],
+  "defaultEnabled": false
+}

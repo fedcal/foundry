@@ -1,0 +1,131 @@
+# Java / Gradle CI.
+# Resolve every <PLACEHOLDER> before use:
+#   SHA      -> gh api repos/<OWNER>/<REPO>/commits/<TAG> --jq '.sha'
+#   JAVA-VER -> grep -r 'JavaLanguageVersion\|sourceCompatibility' build.gradle*
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [<DEFAULT-BRANCH>]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@<SHA> # <TAG>
+        with: { persist-credentials: false }
+
+      # Gradle wrapper validation FIRST. gradle-wrapper.jar is an executable
+      # committed to the repository; a swapped jar runs arbitrary code with the
+      # workflow's token. This check is cheap and non-negotiable.
+      - uses: gradle/actions/wrapper-validation@<SHA> # <TAG>
+
+      - uses: actions/setup-java@<SHA> # <TAG>
+        with:
+          java-version: "<JAVA-VER>"
+          distribution: "<DISTRO>"
+
+      # The Gradle setup action manages the dependency and build caches, and
+      # writes cache-hit statistics into the job summary. Read them: that is how
+      # you verify the cache is actually hitting instead of assuming it.
+      - uses: gradle/actions/setup-gradle@<SHA> # <TAG>
+        with:
+          # Only the default branch should WRITE the shared cache; PR branches read it.
+          # Otherwise every PR pollutes the cache and evicts entries other PRs need.
+          cache-read-only: ${{ github.ref != format('refs/heads/{0}', '<DEFAULT-BRANCH>') }}
+
+      # --no-daemon on ephemeral runners: the daemon has no second build to serve
+      # and its shutdown can truncate test reports.
+      # Configuration cache: enable it in gradle.properties once the build is
+      # compatible; enabling it here while a plugin is incompatible fails obscurely.
+      - run: ./gradlew --no-daemon build
+
+      - name: Coverage gate
+        run: |
+          set -euo pipefail
+          # Prefer jacocoTestCoverageVerification configured in build.gradle so
+          # `./gradlew check` fails identically on a developer machine.
+          ./gradlew --no-daemon jacocoTestCoverageVerification
+
+      - uses: actions/upload-artifact@<SHA> # <TAG>
+        with: { name: jar, path: build/libs/*.jar, retention-days: 7 }
+
+      - uses: actions/upload-artifact@<SHA> # <TAG>
+        if: always()
+        with:
+          name: test-reports
+          path: |
+            build/reports/tests/
+            build/reports/jacoco/
+          retention-days: 7
+
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@<SHA> # <TAG>
+        with: { fetch-depth: 0, persist-credentials: false }
+      - uses: gradle/actions/wrapper-validation@<SHA> # <TAG>
+      - uses: actions/setup-java@<SHA> # <TAG>
+        with: { java-version: "<JAVA-VER>", distribution: "<DISTRO>" }
+      - uses: gradle/actions/setup-gradle@<SHA> # <TAG>
+        with: { cache-read-only: true }
+      - run: ./gradlew --no-daemon check -x test
+
+  security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@<SHA> # <TAG>
+        with: { persist-credentials: false }
+      - uses: gradle/actions/wrapper-validation@<SHA> # <TAG>
+      - uses: actions/setup-java@<SHA> # <TAG>
+        with: { java-version: "<JAVA-VER>", distribution: "<DISTRO>" }
+      - uses: gradle/actions/setup-gradle@<SHA> # <TAG>
+        with: { cache-read-only: true }
+      # Policy (failing CVSS threshold, suppression file with expiry dates) lives
+      # in build.gradle, not here, so it is reviewed like code.
+      - run: ./gradlew --no-daemon dependencyCheckAnalyze
+
+  sbom:
+    needs: build-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@<SHA> # <TAG>
+        with: { persist-credentials: false }
+      - uses: gradle/actions/wrapper-validation@<SHA> # <TAG>
+      - uses: actions/setup-java@<SHA> # <TAG>
+        with: { java-version: "<JAVA-VER>", distribution: "<DISTRO>" }
+      - uses: gradle/actions/setup-gradle@<SHA> # <TAG>
+        with: { cache-read-only: true }
+      - run: ./gradlew --no-daemon cyclonedxBom
+      - uses: actions/upload-artifact@<SHA> # <TAG>
+        with: { name: sbom, path: build/reports/*.json, retention-days: 90 }
+
+  ci-complete:
+    if: always()
+    needs: [build-test, quality, security, sbom]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          set -euo pipefail
+          echo "$RESULTS"
+          echo "$RESULTS" | grep -q '"result": *"failure"'   && exit 1
+          echo "$RESULTS" | grep -q '"result": *"cancelled"' && exit 1
+          exit 0

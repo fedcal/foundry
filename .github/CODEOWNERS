@@ -1,0 +1,12 @@
+# Default owner for everything.
+*                       @fedcal
+
+# The kernel and the authoring contract set the rules the rest of the repository follows:
+# changes here affect every plugin, so they always get maintainer review.
+/AUTHORING.md           @fedcal
+/plugins/foundry-core/  @fedcal
+/scripts/               @fedcal
+/.github/               @fedcal
+
+# Compliance content carries legal risk if it is wrong or overstated.
+/plugins/foundry-legal/ @fedcal

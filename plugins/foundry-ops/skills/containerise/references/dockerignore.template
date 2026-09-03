@@ -1,0 +1,86 @@
+# .dockerignore - the highest-value file in this task.
+#
+# Without it, `COPY . .` uploads and often bakes in: dependency trees, git
+# history (with every credential ever committed), build output, local .env files
+# and test fixtures. Verify the effect:
+#   docker build --progress=plain . 2>&1 | grep -i 'transferring context'
+# Target: < 10 MB for a typical application repository.
+#
+# Note the ordering rule: later patterns override earlier ones, so put the
+# re-inclusions (!) after the exclusions that would otherwise swallow them.
+
+# --- version control ---------------------------------------------------------
+.git
+.gitignore
+.gitattributes
+.github
+
+# --- secrets and local configuration (never in an image) ---------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.keystore
+.npmrc
+.netrc
+.aws
+.kube
+.docker/config.json
+
+# --- dependency trees (installed inside the build, never copied in) ----------
+node_modules
+**/node_modules
+.pnpm-store
+.yarn
+vendor
+.venv
+venv
+__pycache__
+**/__pycache__
+*.pyc
+.tox
+target
+build
+.gradle
+.m2
+
+# --- build output ------------------------------------------------------------
+dist
+out
+coverage
+.next
+.nuxt
+.angular
+*.log
+
+# --- editor and OS noise -----------------------------------------------------
+.idea
+.vscode
+.DS_Store
+Thumbs.db
+*.swp
+
+# --- test and docs, unless the build needs them ------------------------------
+**/*.test.*
+**/*.spec.*
+**/__tests__
+e2e
+cypress
+playwright-report
+test-results
+docs
+*.md
+!README.md
+
+# --- container and local orchestration ---------------------------------------
+Dockerfile*
+compose*.yaml
+compose*.yml
+docker-compose*.yml
+.dockerignore
+
+# --- Foundry working directories ---------------------------------------------
+.foundry/scratch
+.claude/worktrees

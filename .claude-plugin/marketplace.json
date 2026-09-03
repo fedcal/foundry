@@ -1,0 +1,175 @@
+{
+  "name": "foundry",
+  "owner": {
+    "name": "Federico Calò",
+    "url": "https://federicocalo.dev"
+  },
+  "metadata": {
+    "description": "Foundry for Claude Code — a senior-engineering agent stack: research, development, quality, ops, PMO, economics, legal, OSS governance, with governed memory and token economy.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "foundry-core",
+      "source": "./plugins/foundry-core",
+      "description": "Kernel: governed memory, token economy, I/O contracts, orchestration, guard hooks and the Foundry MCP server. Required by every other Foundry plugin.",
+      "category": "core",
+      "tags": [
+        "memory",
+        "orchestration",
+        "contracts",
+        "hooks",
+        "mcp",
+        "tokens"
+      ]
+    },
+    {
+      "name": "foundry-research",
+      "source": "./plugins/foundry-research",
+      "description": "Domain research, technical discovery, documentation engineering and public docs for open source projects.",
+      "category": "research",
+      "tags": [
+        "research",
+        "documentation",
+        "discovery",
+        "docs-as-code"
+      ]
+    },
+    {
+      "name": "foundry-dev",
+      "source": "./plugins/foundry-dev",
+      "description": "Senior engineering: architecture, functional design, protocols, security, integrations, UX/a11y, Angular, Spring Boot, databases, API and service versioning.",
+      "category": "development",
+      "tags": [
+        "architecture",
+        "angular",
+        "spring-boot",
+        "database",
+        "security",
+        "api",
+        "ux",
+        "a11y"
+      ]
+    },
+    {
+      "name": "foundry-quality",
+      "source": "./plugins/foundry-quality",
+      "description": "Test strategy, TDD enforcement, contract and E2E testing, performance engineering, observability and SRE practice.",
+      "category": "quality",
+      "tags": [
+        "testing",
+        "tdd",
+        "performance",
+        "observability",
+        "sre"
+      ]
+    },
+    {
+      "name": "foundry-ai",
+      "source": "./plugins/foundry-ai",
+      "description": "AI engineering: retrieval pipelines measured on labelled query sets, LLM evaluation with calibrated judges, prompt engineering as versioned code, and agent tool and loop design.",
+      "category": "ai",
+      "tags": [
+        "rag",
+        "retrieval",
+        "evaluation",
+        "prompt-engineering",
+        "agents",
+        "llm"
+      ]
+    },
+    {
+      "name": "foundry-data",
+      "source": "./plugins/foundry-data",
+      "description": "Data science and classical ML: exploratory analysis, feature engineering and model training, evaluation, and production ML operations.",
+      "category": "data",
+      "tags": [
+        "data-science",
+        "machine-learning",
+        "eda",
+        "feature-engineering",
+        "model-evaluation",
+        "mlops"
+      ]
+    },
+    {
+      "name": "foundry-ops",
+      "source": "./plugins/foundry-ops",
+      "description": "Delivery and deploy: GitHub Actions pipelines, containers and Kubernetes, Terraform/OpenTofu, cloud and PaaS targets, release engineering.",
+      "category": "operations",
+      "tags": [
+        "cicd",
+        "docker",
+        "kubernetes",
+        "terraform",
+        "cloud",
+        "release"
+      ]
+    },
+    {
+      "name": "foundry-pmo",
+      "source": "./plugins/foundry-pmo",
+      "description": "PMO and agile delivery: roadmaps, backlog, requirements, risk, Scrum events, flow metrics and forecasting, and tracker operations across GitHub, Jira, Linear and GitLab.",
+      "category": "management",
+      "tags": [
+        "roadmap",
+        "backlog",
+        "requirements",
+        "github",
+        "pmo",
+        "scrum",
+        "agile",
+        "kanban",
+        "jira",
+        "slack",
+        "forecasting"
+      ]
+    },
+    {
+      "name": "foundry-economics",
+      "source": "./plugins/foundry-economics",
+      "description": "Project cost engineering, business cases and financial plans, AI/token cost control, grant and public funding reporting.",
+      "category": "economics",
+      "tags": [
+        "cost",
+        "finops",
+        "business-case",
+        "budget",
+        "funding"
+      ]
+    },
+    {
+      "name": "foundry-legal",
+      "source": "./plugins/foundry-legal",
+      "description": "Compliance engine with pluggable jurisdiction packs: global baseline, EU/Italy, North America, UK/APAC/LATAM, plus OSS licensing and IP.",
+      "category": "compliance",
+      "tags": [
+        "gdpr",
+        "ai-act",
+        "nis2",
+        "accessibility",
+        "licensing",
+        "compliance"
+      ]
+    },
+    {
+      "name": "foundry-growth",
+      "source": "./plugins/foundry-growth",
+      "description": "Everything around the project rather than inside it: positioning and messaging, launch and audience, fundraising narrative and funder targeting, personal reputation, and finding collaborators in your own field.",
+      "version": "0.1.0"
+    },
+    {
+      "name": "foundry-oss",
+      "source": "./plugins/foundry-oss",
+      "description": "Open source governance: contribution workflow, RFC process, issue triage, security policy, semantic versioning and release communication.",
+      "category": "governance",
+      "tags": [
+        "open-source",
+        "governance",
+        "rfc",
+        "triage",
+        "semver"
+      ]
+    }
+  ]
+}

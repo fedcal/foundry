@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fedcal.github.io/foundry/schemas/review.v1.schema.json",
+  "title": "Review result",
+  "description": "Outcome of a review pass with findings ranked by severity.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "review.v1"
+    },
+    "producedBy": {
+      "type": "string",
+      "description": "agent name that produced this artifact"
+    },
+    "target": {
+      "type": "string"
+    },
+    "dimension": {
+      "type": "string"
+    },
+    "verdict": {
+      "type": "string",
+      "enum": [
+        "pass",
+        "pass-with-comments",
+        "block"
+      ]
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "$ref": "https://fedcal.github.io/foundry/schemas/finding.v1.schema.json"
+      }
+    },
+    "metrics": {
+      "type": "object"
+    },
+    "summary": {
+      "type": "string",
+      "maxLength": 900
+    }
+  },
+  "required": [
+    "schema",
+    "producedBy",
+    "target",
+    "dimension",
+    "verdict",
+    "findings",
+    "summary"
+  ]
+}

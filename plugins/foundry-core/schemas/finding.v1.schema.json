@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fedcal.github.io/foundry/schemas/finding.v1.schema.json",
+  "title": "Finding",
+  "description": "A single defect, gap or risk discovered by an audit, review or research agent.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "finding.v1"
+    },
+    "producedBy": {
+      "type": "string",
+      "description": "agent name that produced this artifact"
+    },
+    "id": {
+      "type": "string"
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "critical",
+        "high",
+        "medium",
+        "low",
+        "info"
+      ]
+    },
+    "category": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 120
+    },
+    "summary": {
+      "type": "string",
+      "maxLength": 600
+    },
+    "failureScenario": {
+      "type": "string",
+      "description": "Concrete inputs/state leading to the wrong outcome. Required: a finding without one is speculation."
+    },
+    "location": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "file": {
+          "type": "string"
+        },
+        "line": {
+          "type": "integer"
+        },
+        "component": {
+          "type": "string"
+        }
+      }
+    },
+    "standard": {
+      "type": "string",
+      "description": "Standard clause enforced, e.g. WCAG 2.2 SC 1.4.3, OWASP ASVS V2.1.1, GDPR Art. 32."
+    },
+    "remediation": {
+      "type": "string"
+    },
+    "effortHours": {
+      "type": "number",
+      "minimum": 0
+    },
+    "confidence": {
+      "type": "string",
+      "enum": [
+        "high",
+        "medium",
+        "low"
+      ]
+    },
+    "verdict": {
+      "type": "string",
+      "enum": [
+        "confirmed",
+        "plausible",
+        "refuted"
+      ]
+    },
+    "evidence": {
+      "type": "array",
+      "description": "Verifiable pointers: file:line, command output, URL, doc clause.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "ref"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "file",
+              "command",
+              "url",
+              "standard",
+              "measurement"
+            ]
+          },
+          "ref": {
+            "type": "string"
+          },
+          "excerpt": {
+            "type": "string",
+            "maxLength": 600
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "schema",
+    "producedBy",
+    "id",
+    "severity",
+    "title",
+    "summary",
+    "failureScenario",
+    "confidence"
+  ]
+}

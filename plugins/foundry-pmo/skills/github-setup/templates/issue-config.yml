@@ -1,0 +1,21 @@
+# .github/ISSUE_TEMPLATE/config.yml
+#
+# blank_issues_enabled: false forces every issue through a form, which is what makes the
+# backlog machine-readable. If contributors need an escape hatch, add a "Something else"
+# form with a single free-text field rather than re-enabling blank issues - you keep the
+# labels and the triage queue that way.
+
+blank_issues_enabled: false
+
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/{{owner}}/{{repo}}/security/advisories/new
+    about: Report privately through a security advisory. Do not open a public issue.
+
+  - name: Question or discussion
+    url: https://github.com/{{owner}}/{{repo}}/discussions
+    about: Ask before filing. Issues are for work that has an owner and an outcome.
+
+  - name: Contributing guide
+    url: https://github.com/{{owner}}/{{repo}}/blob/HEAD/CONTRIBUTING.md
+    about: Definition of Ready, Definition of Done, and how work is prioritised.

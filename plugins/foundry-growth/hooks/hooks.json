@@ -1,0 +1,20 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "statusMessage": "Foundry: checking outbound claims for substantiation",
+            "timeout": 10,
+            "command": "node",
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/hooks/guard-claims.mjs"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

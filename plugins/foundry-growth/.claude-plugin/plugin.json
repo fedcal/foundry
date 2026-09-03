@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin.json",
+  "name": "foundry-growth",
+  "displayName": "Foundry Growth",
+  "version": "0.1.0",
+  "description": "Everything around the project rather than inside it: positioning and messaging, launch and audience, fundraising narrative and funder targeting, personal reputation, and finding collaborators in your own field.",
+  "author": {
+    "name": "Federico Calò",
+    "url": "https://federicocalo.dev"
+  },
+  "homepage": "https://fedcal.github.io/foundry",
+  "repository": "https://github.com/fedcal/foundry",
+  "license": "Apache-2.0",
+  "keywords": [
+    "claude-code",
+    "foundry",
+    "positioning",
+    "launch",
+    "audience",
+    "fundraising",
+    "personal-brand",
+    "collaboration"
+  ],
+  "metadata": {
+    "foundry.vertical": "growth",
+    "foundry.contracts": "v1"
+  },
+  "dependencies": [
+    {
+      "name": "foundry-core",
+      "version": "^0.1.0"
+    }
+  ],
+  "defaultEnabled": false
+}

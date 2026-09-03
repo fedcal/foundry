@@ -1,0 +1,33 @@
+{
+  "id": "angular-spring-enterprise",
+  "name": "Angular + Spring Boot, enterprise",
+  "description": "Full-stack enterprise product: Angular frontend, Spring Boot services, relational database, strict gates.",
+  "plugins": ["foundry-core", "foundry-dev", "foundry-quality", "foundry-ops", "foundry-pmo", "foundry-legal"],
+  "foundryConfig": {
+    "enforcement": "gate",
+    "indexTokenBudget": 4000,
+    "protectedPaths": [
+      ".github/workflows/**",
+      "**/*.lock",
+      "package-lock.json",
+      "**/src/main/resources/db/migration/**",
+      "**/application-prod.*"
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(mvn:*)", "Bash(./mvnw:*)", "Bash(gradle:*)", "Bash(./gradlew:*)",
+      "Bash(npm run:*)", "Bash(npx ng:*)", "Bash(git status:*)", "Bash(git diff:*)", "Bash(git log:*)",
+      "Read(**)", "Glob(**)", "Grep(**)"
+    ],
+    "ask": ["Bash(git push:*)", "Bash(docker push:*)", "Bash(kubectl apply:*)", "Bash(terraform apply:*)"],
+    "deny": ["Read(./.env)", "Read(./.env.*)", "Read(**/secrets/**)", "Read(**/*.pem)", "Read(**/*.p12)"],
+    "defaultMode": "default"
+  },
+  "recommendedMcpServers": ["foundry", "filesystem", "git", "github", "postgres"],
+  "notes": [
+    "Database migrations are a protected path: edits escalate to a human on purpose.",
+    "Production configuration files are protected for the same reason.",
+    "foundry-legal is included because enterprise products almost always carry GDPR and accessibility duties."
+  ]
+}

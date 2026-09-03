@@ -1,0 +1,38 @@
+line,note,provenance,M1,M2,M3,M4,M5,M6,M7,M8,M9,M10,M11,M12,FY total
+TIMING ASSUMPTIONS,,,,,,,,,,,,,,,
+days sales outstanding (DSO),when customers actually pay,[given: contract terms],<<TBC>>,,,,,,,,,,,,a 60-day DSO is a financing decision disguised as a sales term
+days payable outstanding (DPO),when we actually pay suppliers,[given],<<TBC>>,,,,,,,,,,,,
+billing basis,monthly / annual upfront,[given],<<TBC>>,,,,,,,,,,,,annual upfront flatters early cash and creates deferred revenue
+tax payment months,when cash actually leaves,[given],<<TBC>>,,,,,,,,,,,,accrual month is not payment month
+cash buffer policy,never below N months of opex,[given],<<TBC>>,,,,,,,,,,,,state it and test the plan against it
+,,,,,,,,,,,,,,,
+CASH FLOW,,,,,,,,,,,,,,,
+EBITDA,from pl-monthly.csv row 20,derived,<<TBC: link>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,"=SUM(D10:O10)"
+change in receivables,+ = cash outflow,derived from DSO,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,"=SUM(D11:O11)"
+change in payables,+ = cash inflow,derived from DPO,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,"=SUM(D12:O12)"
+change in working capital,formula,derived,"=D11-D12","=E11-E12","=F11-F12","=G11-G12","=H11-H12","=I11-I12","=J11-J12","=K11-K12","=L11-L12","=M11-M12","=N11-N12","=O11-O12","=SUM(D13:O13)"
+tax paid,cash out in payment months only,[given],<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,"=SUM(D14:O14)"
+operating cash flow,formula,derived,"=D10-D13-D14","=E10-E13-E14","=F10-F13-F14","=G10-G13-G14","=H10-H13-H14","=I10-I13-I14","=J10-J13-J14","=K10-K13-K14","=L10-L13-L14","=M10-M13-M14","=N10-N13-N14","=O10-O13-O14","=SUM(D15:O15)"
+capex,equipment / capitalised items,[given],<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,"=SUM(D16:O16)"
+free cash flow,formula,derived,"=D15-D16","=E15-E16","=F15-F16","=G15-G16","=H15-H16","=I15-I16","=J15-J16","=K15-K16","=L15-L16","=M15-M16","=N15-N16","=O15-O16","=SUM(D17:O17)"
+financing in / (out),equity draw / loan / repayment,[given],<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,"=SUM(D18:O18)"
+grant receipts,pre-financing / interim / balance,[given: grant agreement],<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,<<TBC>>,"=SUM(D19:O19)"
+opening cash,prior closing,[given] for M1,<<TBC>>,"=D21","=E21","=F21","=G21","=H21","=I21","=J21","=K21","=L21","=M21","=N21",
+closing cash,formula,derived,"=D20+D17+D18+D19","=E20+E17+E18+E19","=F20+F17+F18+F19","=G20+G17+G18+G19","=H20+H17+H18+H19","=I20+I17+I18+I19","=J20+J17+J18+J19","=K20+K17+K18+K19","=L20+L17+L18+L19","=M20+M17+M18+M19","=N20+N17+N18+N19","=O20+O17+O18+O19",closing balance — do not sum
+cumulative free cash flow,formula,derived,"=D17","=D22+E17","=E22+F17","=F22+G17","=G22+H17","=H22+I17","=I22+J17","=J22+K17","=K22+L17","=L22+M17","=M22+N17","=N22+O17",cash break-even is the first month this turns permanently positive
+,,,,,,,,,,,,,,,
+HEADLINES,item,,value,,,,,,,,,,,,formula
+,minimum closing cash across the horizon,,"=MIN(D21:O21)",,,,,,,,,,,,THE TROUGH — this sets the funding requirement
+,month of the trough,,"=INDEX($D$1:$O$1,MATCH(MIN(D21:O21),D21:O21,0))",,,,,,,,,,,,not the end state — the dip
+,average monthly net burn,,"=IF(AVERAGE(D17:O17)>=0,""cash positive"",-AVERAGE(D17:O17))",,,,,,,,,,,,
+,runway (months) from closing cash,,"=IF(D27=""cash positive"",""n/a"",O21/D27)",,,,,,,,,,,,closing cash / average monthly net burn
+,cash break-even month,,<<TBC: first month cumulative FCF turns permanently positive>>,,,,,,,,,,,,read across row 22
+,plan respects the cash buffer policy?,,<<TBC: yes | no>>,,,,,,,,,,,,if no the plan has already failed
+,total financing required,,"=-MIN(0,MIN(D21:O21))",,,,,,,,,,,,before any buffer — add the buffer separately
+,,,,,,,,,,,,,,,
+CHECKS,item,,status,,,,,,,,,,,,
+,closing cash reconciles to the balance sheet every period,,<<TBC>>,,,,,,,,,,,,
+,annual costs lumped in their month not spread,,<<TBC>>,,,,,,,,,,,,lumping changes the trough
+,sign convention consistent across every row,,<<TBC>>,,,,,,,,,,,,
+,grant receipt timing matches the grant agreement,,<<TBC>>,,,,,,,,,,,,pre-financing / interims / retained balance
+,thirteenth / fourteenth month salary payments included where applicable,,<<TBC>>,,,,,,,,,,,,

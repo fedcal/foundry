@@ -1,0 +1,26 @@
+# CODEOWNERS — last matching rule wins. Owners are auto-requested for review.
+# Every path here must map to a person in MAINTAINERS.md; an owner who cannot review
+# is worse than no owner, because it silently blocks pull requests.
+# Verify with: gh api repos/{{REPO}}/codeowners/errors --jq '.errors'
+
+# Default owner for anything not matched below
+*                       {{DEFAULT_OWNER}}
+
+# Public API surface — changes here trigger the RFC threshold in GOVERNANCE.md
+{{PUBLIC_API_PATH}}     {{API_OWNERS}}
+
+# Build, CI and release automation
+/.github/               {{CI_OWNERS}}
+{{BUILD_FILES}}         {{CI_OWNERS}}
+
+# Security-sensitive code
+{{SECURITY_PATHS}}      {{SECURITY_OWNERS}}
+
+# Governance and policy documents
+/GOVERNANCE.md          {{GOVERNANCE_OWNERS}}
+/CODE_OF_CONDUCT.md     {{GOVERNANCE_OWNERS}}
+/SECURITY.md            {{SECURITY_OWNERS}}
+/.github/CODEOWNERS     {{GOVERNANCE_OWNERS}}
+
+# Docs — deliberately broad so doc fixes are not bottlenecked
+/docs/                  {{DOCS_OWNERS}}

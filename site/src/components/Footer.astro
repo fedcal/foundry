@@ -1,0 +1,35 @@
+---
+import Default from '@astrojs/starlight/components/Footer.astro';
+
+const lang = Astro.currentLocale === 'it' ? 'it' : 'en';
+const strings = {
+  en: {
+    built: 'Foundry is built and maintained by',
+    license: 'Apache-2.0 licensed',
+    source: 'Source on GitHub',
+    disclaimer:
+      'Foundry is an independent open source project. It is not affiliated with, endorsed by, or sponsored by Anthropic.',
+  },
+  it: {
+    built: 'Foundry è realizzato e mantenuto da',
+    license: 'Licenza Apache-2.0',
+    source: 'Codice su GitHub',
+    disclaimer:
+      'Foundry è un progetto open source indipendente. Non è affiliato, approvato o sponsorizzato da Anthropic.',
+  },
+}[lang];
+---
+
+<Default><slot /></Default>
+
+<footer class="foundry-footer">
+  <p class="foundry-footer__main">
+    {strings.built}
+    <a href="https://federicocalo.dev" rel="noopener">federicocalo.dev</a>
+    <span aria-hidden="true">·</span>
+    <a href="https://github.com/fedcal/foundry/blob/main/LICENSE">{strings.license}</a>
+    <span aria-hidden="true">·</span>
+    <a href="https://github.com/fedcal/foundry">{strings.source}</a>
+  </p>
+  <p class="foundry-footer__note">{strings.disclaimer}</p>
+</footer>

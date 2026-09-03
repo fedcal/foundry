@@ -1,0 +1,115 @@
+# Reusable, environment-gated deploy. Called with an image DIGEST that some
+# upstream job already built, scanned and attested. It never builds anything.
+#
+# Approval lives on the GitHub environment (required reviewers), NOT in an `if:`
+# condition - one edit to a condition and you have shipped from a fork.
+name: deploy
+
+on:
+  workflow_call:
+    inputs:
+      environment: { required: true,  type: string }
+      image:       { required: true,  type: string }
+      digest:      { required: true,  type: string }   # sha256:...
+      namespace:   { required: false, type: string, default: default }
+    outputs:
+      previous-digest:
+        description: "Digest that was running before this deploy - the rollback target."
+        value: ${{ jobs.deploy.outputs.previous-digest }}
+
+permissions:
+  contents: read
+
+# Serialise per environment. NEVER cancel a deploy in flight: a cancelled apply
+# leaves a half-migrated database or an orphaned state lock.
+concurrency:
+  group: deploy-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: ${{ inputs.environment }}
+      url: <ENVIRONMENT-URL>
+    permissions:
+      contents: read
+      id-token: write          # OIDC to the cloud - no long-lived keys anywhere
+      packages: read
+    outputs:
+      previous-digest: ${{ steps.record.outputs.previous }}
+    steps:
+      - uses: actions/checkout@<SHA> # <TAG>
+        with: { persist-credentials: false }
+
+      # --- authenticate without secrets ------------------------------------
+      # Trust policy on the cloud side must constrain sub to
+      #   repo:<OWNER>/<REPO>:environment:<ENVIRONMENT>
+      # A wildcard sub (repo:<OWNER>/<REPO>:*) is a finding, not a configuration.
+      - uses: <CLOUD-LOGIN-ACTION-OWNER>/<CLOUD-LOGIN-ACTION-REPO>@<SHA> # <TAG>
+        with:
+          role-to-assume: <ROLE-ARN-OR-IDENTITY>
+          aws-region: <REGION>
+
+      # --- refuse to deploy an unverified artefact -------------------------
+      - name: Verify provenance before applying
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REF: oci://${{ inputs.image }}@${{ inputs.digest }}
+        run: gh attestation verify "$REF" --repo "${{ github.repository }}"
+
+      # --- record the rollback target BEFORE mutating anything -------------
+      # A rollback that starts with "which digest was it?" has already cost minutes.
+      - id: record
+        run: |
+          set -euo pipefail
+          PREV=$(kubectl -n "${{ inputs.namespace }}" get deploy/<NAME> \
+                   -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null || echo "none")
+          echo "previous=$PREV" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Deploy ${{ inputs.environment }}"
+            echo "- new: \`${{ inputs.image }}@${{ inputs.digest }}\`"
+            echo "- previous (rollback target): \`$PREV\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # --- apply -----------------------------------------------------------
+      # Pin by digest. Tags are mutable; digests are the artefact's identity.
+      - name: Apply
+        run: |
+          set -euo pipefail
+          kubectl -n "${{ inputs.namespace }}" set image deploy/<NAME> \
+            <CONTAINER>="${{ inputs.image }}@${{ inputs.digest }}"
+          kubectl -n "${{ inputs.namespace }}" rollout status deploy/<NAME> \
+            --timeout=<ROLLOUT-TIMEOUT-SECONDS>s
+
+      # --- prove it works --------------------------------------------------
+      - name: Smoke test
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 <SMOKE-ATTEMPTS>); do
+            if curl -fsS --max-time 10 "<SMOKE-URL>" > /dev/null; then
+              echo "smoke ok on attempt $i"; exit 0
+            fi
+            sleep <SMOKE-INTERVAL-SECONDS>
+          done
+          echo "smoke test failed"; exit 1
+
+      # --- automatic rollback ----------------------------------------------
+      # Runs when the rollout or the smoke test failed. Diagnose afterwards;
+      # restore service first.
+      - name: Roll back on failure
+        if: failure() && steps.record.outputs.previous != 'none'
+        run: |
+          set -euo pipefail
+          echo "rolling back to ${{ steps.record.outputs.previous }}"
+          kubectl -n "${{ inputs.namespace }}" set image deploy/<NAME> \
+            <CONTAINER>="${{ steps.record.outputs.previous }}"
+          kubectl -n "${{ inputs.namespace }}" rollout status deploy/<NAME> \
+            --timeout=<ROLLOUT-TIMEOUT-SECONDS>s
+          echo "::error::deploy failed and was rolled back to ${{ steps.record.outputs.previous }}"
+
+      # NOTE: under GitOps this imperative rollback is temporary - the controller
+      # reverts it on the next sync. There, the real rollback is `git revert` of
+      # the manifest commit, and its duration is the sync interval. Measure it and
+      # write it into .foundry/runbooks/rollback-<service>.md.

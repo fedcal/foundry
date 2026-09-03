@@ -1,0 +1,17 @@
+# Files carried into every worktree Claude Code creates for this repository.
+#
+# The runtime copies listed paths file by file and SKIPS SYMLINKS — it logs
+# "Skipping symlink in .worktreeinclude" and moves on. site/node_modules holds 17
+# symlinks, so listing it here produced a node_modules that arrived incomplete and
+# could not build, while looking as though it had worked. Run `npm ci` inside the
+# worktree instead; it is slower and it is correct.
+#
+# .foundry/ needs no entry: its memory, runbooks and config are committed, so a
+# worktree gets them from git. Two consequences worth knowing before dispatching
+# agents with `isolation: worktree`:
+#   - .foundry/blackboard/ is gitignored, so it does NOT exist in a fresh worktree
+#     and anything written there is invisible to the main checkout and to sibling
+#     agents. An agent in a worktree must hand its artifact back in its return value,
+#     or write it under the main checkout resolved from the hook `cwd`.
+#   - In a project where .foundry/ is gitignored entirely, a worktree starts with no
+#     Foundry state at all. List the parts that must travel here, as real files.

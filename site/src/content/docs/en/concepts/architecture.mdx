@@ -1,0 +1,161 @@
+---
+title: Architecture
+description: One kernel and eleven verticals, why every vertical declares a dependency on the kernel, and what actually lives in each directory.
+sidebar:
+  order: 1
+---
+
+import { FileTree, Aside } from '@astrojs/starlight/components';
+
+Foundry is one marketplace containing twelve plugins. One of them, `foundry-core`, owns all the
+state and all the mechanism. The other eleven own agents and skills and own no state at all.
+
+## Kernel and verticals
+
+The split is not organisational tidiness. It exists so that a vertical can be written by someone
+who has never read the kernel, and still interoperate with the other eleven: the vertical produces
+JSON that satisfies a kernel schema, writes it where the kernel expects, and is subject to the
+kernel's gates.
+
+| Layer | Plugin | Owns |
+|---|---|---|
+| Kernel | `foundry-core` | `.foundry/` state, the ten contract schemas, the MCP server, the CLI, all nine hooks, three workflows, three output styles |
+| Vertical | the other eleven | Agents and skills in one domain. No schemas and no state; only `foundry-growth` adds a hook of its own, an advisory claim-substantiation gate. |
+
+`foundry-core` ships `defaultEnabled: true`. Every vertical ships `defaultEnabled: false` and:
+
+```json
+"dependencies": [{ "name": "foundry-core", "version": "^0.1.0" }]
+```
+
+### Why `dependencies` matters
+
+Without that declaration a vertical would be installable on its own, and every one of its
+assumptions would silently fail:
+
+- `.foundry/memory/`, `.foundry/blackboard/` and `.foundry/config.json` would not exist, so
+  `memory_search` and `blackboard_write` would have nothing to read or write.
+- The `foundry` MCP server would not be running, so every tool call in every agent body would fail.
+- `plugins/foundry-core/schemas/*.schema.json` would be absent, so the output contract each agent
+  declares would name a schema nobody can resolve.
+- No hook would fire, so nothing would validate a handoff, cap a subagent return or block a
+  destructive command.
+
+The version range is a caret on `0.1.0`, so contract-breaking kernel changes require a minor bump
+and every vertical that pins the old range keeps working against the old kernel.
+
+## What is in each plugin
+
+| Plugin | Agents | Skills | Focus |
+|---|---|---|---|
+| `foundry-core` | 4 | 7 | Orchestration, memory curation, context brokering, runbook authoring — plus the mechanism everything else runs on |
+| `foundry-research` | 5 | 5 | Domain research, technology evaluation, evidence verification, documentation engineering |
+| `foundry-ai` | 4 | 4 | Retrieval pipelines measured on labelled query sets, LLM evaluation suites, agent and tool architecture, prompt engineering |
+| `foundry-data` | 4 | 4 | Exploratory analysis with a verdict, baselines before models, evaluation beyond accuracy, notebook-to-production MLOps |
+| `foundry-dev` | 19 | 17 | Architecture, domain modelling, protocols, integrations, identity, security, supply chain, UX and accessibility, Angular, Spring Boot, databases and migrations, API versioning |
+| `foundry-quality` | 6 | 5 | Test strategy, contract and E2E testing, performance, observability, SRE practice |
+| `foundry-ops` | 6 | 5 | GitHub Actions, containers, Kubernetes, Terraform, cloud and PaaS targets, release engineering |
+| `foundry-pmo` | 6 | 6 | Roadmap, backlog, requirements, risk, GitHub operations, delivery reporting |
+| `foundry-economics` | 5 | 5 | Project cost engineering, FinOps, AI spend control, business cases, funding |
+| `foundry-legal` | 5 | 4 | Compliance engine plus five jurisdiction packs: `global-baseline`, `eu`, `it`, `north-america`, `uk-apac-latam` |
+| `foundry-growth` | 6 | 6 | Positioning and messaging, launch and audience, fundraising narrative and funder targeting, personal reputation, finding collaborators — plus its own advisory claim-substantiation gate |
+| `foundry-oss` | 4 | 5 | Governance, RFC process, issue triage, semantic versioning, security advisories, release communication |
+
+<Aside type="note" title="Every installed plugin costs something">
+Agent and skill descriptions stay resident so Claude can route to them. That cost is modest per
+plugin and real in aggregate — which is why the `full` profile exists for exploration and the other
+four exist for work.
+</Aside>
+
+## Inside the kernel
+
+<FileTree>
+
+- plugins/foundry-core/
+  - .claude-plugin/
+    - plugin.json Kernel manifest; `defaultEnabled: true`, `metadata.foundry.contracts: v1`
+  - lib/
+    - foundry.mjs The whole kernel: paths, config, memory, index, validator, token estimate, hook plumbing
+  - bin/
+    - foundry.mjs CLI — `init`, `doctor`, `memory`, `tokens`, `runbooks`, `validate`, `profile`
+  - mcp/
+    - server.mjs stdio JSON-RPC server exposing nine tools and three resource kinds
+  - .mcp.json Registers the server under the name `foundry`
+  - hooks/
+    - hooks.json Nine hook registrations across eight events
+    - session-start.mjs
+    - prompt-context.mjs
+    - guard-bash.mjs
+    - guard-write.mjs
+    - validate-contract.mjs
+    - subagent-firewall.mjs
+    - stop-verify.mjs
+    - precompact-persist.mjs
+    - session-end.mjs
+  - schemas/ Ten JSON Schema 2020-12 contracts, versioned by filename
+  - agents/ foundry-orchestrator, memory-curator, context-broker, runbook-author
+  - skills/ orchestrate, memory, token-budget, runbook, contracts, handoff, foundry-init
+  - workflows/ feature-delivery.js, audit-sweep.js, compliance-sweep.js
+  - playbooks/ feature-delivery.yaml, audit.yaml
+  - output-styles/ foundry-senior-engineer, foundry-pmo, foundry-analyst
+  - test/
+    - foundry.test.mjs Kernel unit tests, `node --test`
+
+</FileTree>
+
+Every hook, the CLI and the MCP server import the same `lib/foundry.mjs`. That is deliberate: the
+answer you get from `foundry memory search` on the command line and the answer an agent gets from
+`memory_search` come from one implementation, so they cannot drift.
+
+The kernel has **zero runtime dependencies**. Everything is Node 20 standard library — `node:fs`,
+`node:path`, `node:crypto`, `node:test`. There is no `npm install` step at any point in using
+Foundry, including the JSON Schema validator, which is roughly 100 lines covering the keyword
+subset the ten contracts actually use.
+
+## The repository
+
+<FileTree>
+
+- .claude-plugin/
+  - marketplace.json The twelve plugin entries; each `source` carries its full path
+- plugins/ One directory per plugin
+- profiles/ angular-spring-enterprise, oss-library, pa-italia, startup-mvp, full
+- scripts/
+  - validate-assets.mjs CI check of every asset against AUTHORING.md
+- site/ This documentation, EN and IT
+- AUTHORING.md Normative asset contract; CI enforces it
+
+</FileTree>
+
+`AUTHORING.md` is the piece that makes twelve plugins behave like one system. It fixes the agent and
+skill frontmatter, the model and effort routing table, the memory tier list, the I/O contract
+declaration every agent must carry verbatim, and the rule that a published `vN` schema is never
+edited. `scripts/validate-assets.mjs` runs in CI, so an asset that ignores it does not merge.
+
+## What Foundry writes into your project
+
+<FileTree>
+
+- .foundry/
+  - config.json Enforcement level, budgets, protected paths
+  - overrides.json Gate overrides, each with a reason and an expiry
+  - memory/
+    - INDEX.md The only memory file loaded by default
+    - facts/ One file per fact
+  - runbooks/ Procedures someone will repeat
+  - blackboard/ Validated artifacts agents hand each other, one directory per wave; gitignored
+  - scratch/ Session-local, gitignored
+  - metrics/ events.jsonl, gitignored
+- docs/adr/ Architecture decisions — outside `.foundry/`, because they are public
+- .claude/settings.json Written by `foundry profile`, merged never replaced
+
+</FileTree>
+
+`foundry init` appends three entries to `.gitignore`: `.foundry/scratch/`, `.foundry/metrics/` and
+`.foundry/blackboard/`. Wave artifacts hold intermediate output — code excerpts, raw findings — so
+they stay local to the machine and the session rather than arriving in a pull request. Everything
+else under `.foundry/` is meant to be committed: memory and runbooks are project knowledge, and
+reviewing a change to them in a pull request is the point.
+
+Read next: [Memory](/foundry/en/concepts/memory/) for the tiers and the fact lifecycle, or
+[Contracts](/foundry/en/concepts/contracts/) for what the schemas enforce.

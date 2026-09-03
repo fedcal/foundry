@@ -1,0 +1,65 @@
+---
+title: Foundry
+description: Agents, skills, hooks, MCP, governed memory and deployment practice for Claude Code, packaged as an installable plugin marketplace.
+template: splash
+hero:
+  tagline: The senior-engineering stack for Claude Code. Twelve plugins, one kernel, governed memory and a token budget you can actually measure.
+  actions:
+    - text: Install it
+      link: /foundry/en/start/installation/
+      icon: right-arrow
+      variant: primary
+    - text: View on GitHub
+      link: https://github.com/fedcal/foundry
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## What this is
+
+Foundry is a marketplace of twelve Claude Code plugins that turn a generic assistant into a set of
+specialists that behave like senior colleagues: they consult recorded decisions before proposing
+new ones, hand work to each other through validated contracts, refuse to claim success without
+evidence, and keep the cost of a session under a budget you can inspect.
+
+<CardGrid>
+  <Card title="Governed memory">
+    Four tiers — scratch, facts, runbooks, decisions. Only a 4000-token index is ever loaded by
+    default; everything else is retrieved on demand through an MCP tool.
+  </Card>
+  <Card title="Contracts between agents">
+    Ten versioned JSON Schemas. A hook validates every handoff and sends a non-conforming artifact
+    straight back to the agent that wrote it.
+  </Card>
+  <Card title="Gates that explain themselves">
+    Destructive commands, secret writes and unverified completion claims are blocked, each stating
+    the reason and what to do instead. The Bash rules name the rule and carry a documented,
+    expiring override; secrets and completion claims deliberately have none.
+  </Card>
+  <Card title="A measurable token budget">
+    A context firewall caps what a subagent may return, model routing matches cost to task, and
+    `foundry tokens` prints what the configuration actually costs per session.
+  </Card>
+</CardGrid>
+
+## Install
+
+```bash
+/plugin marketplace add fedcal/foundry
+/plugin install foundry-core@foundry
+```
+
+Then pick the plugins for the work at hand, or apply a profile:
+
+```bash
+foundry profile angular-spring-enterprise
+```
+
+## What it is not
+
+Foundry is not a replacement for [superpowers](https://github.com/obra/superpowers) — it depends on
+it and delegates test-driven development, debugging discipline and completion verification to it
+rather than reimplementing them. It is not a model, not a hosted service, and not affiliated with
+Anthropic.
