@@ -39,7 +39,7 @@ missing.
 
 ```json
 {
-  "$schema": "https://json.schemastore.org/claude-code-plugin.json",
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "foundry-<vertical>",
   "displayName": "Foundry <Vertical>",
   "version": "0.1.0",

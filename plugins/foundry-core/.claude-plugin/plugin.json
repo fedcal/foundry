@@ -1,5 +1,5 @@
 {
-  "$schema": "https://www.schemastore.org/claude-code-plugin-manifest.json",
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "foundry-core",
   "displayName": "Foundry Core",
   "version": "0.1.0",

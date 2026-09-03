@@ -38,6 +38,34 @@ jobs:
           done < <(find plugins scripts -name '*.mjs' -o -name '*.js' | sort)
           exit $fail
 
+  manifests:
+    name: Manifests satisfy the platform validator
+    runs-on: ubuntu-latest
+    # scripts/validate-assets.mjs enforces AUTHORING.md; it does not enforce the
+    # platform's own manifest schema. Without this job a manifest can be rejected
+    # by `/plugin install` while every local gate stays green. `plugin validate`
+    # reads local files only — verified to run with no credentials and no network
+    # account, so no secret is needed here.
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+      - name: Install the Claude Code CLI
+        # Pinned: an exact npm version is immutable, so this cannot change under us.
+        run: npm install -g @anthropic-ai/claude-code@2.1.259
+      - name: Validate the marketplace manifest
+        run: claude plugin validate . --strict
+      - name: Validate every plugin manifest
+        run: |
+          set -euo pipefail
+          fail=0
+          for dir in plugins/*/; do
+            echo "--- ${dir}"
+            claude plugin validate "$dir" --strict || fail=1
+          done
+          exit $fail
+
   contracts:
     name: Contract schemas are self-consistent
     runs-on: ubuntu-latest
