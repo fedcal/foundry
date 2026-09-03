@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "foundry-economics",
   "displayName": "Foundry Economics",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Project cost engineering, business cases and financial plans, AI/token cost control, grant and public funding reporting.",
   "author": {
     "name": "Federico Calò",

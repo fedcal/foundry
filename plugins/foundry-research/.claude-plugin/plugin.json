@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "foundry-research",
   "displayName": "Foundry Research",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Domain research, technical discovery, documentation engineering and public docs for open source projects.",
   "author": {
     "name": "Federico Calò",

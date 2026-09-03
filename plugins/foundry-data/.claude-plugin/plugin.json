@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "foundry-data",
   "displayName": "Foundry Data",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Data science and classical ML: exploratory analysis, feature engineering and model training, evaluation, and production ML operations.",
   "author": {
     "name": "Federico Calò",

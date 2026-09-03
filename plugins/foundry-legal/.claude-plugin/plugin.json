@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "foundry-legal",
   "displayName": "Foundry Legal",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Compliance engine with pluggable jurisdiction packs: global baseline, EU/Italy, North America, UK/APAC/LATAM, plus OSS licensing and IP.",
   "author": {
     "name": "Federico Calò",

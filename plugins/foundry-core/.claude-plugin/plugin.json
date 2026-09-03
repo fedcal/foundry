@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "foundry-core",
   "displayName": "Foundry Core",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Kernel: governed memory, token economy, I/O contracts, orchestration, guard hooks and the Foundry MCP server. Required by every other Foundry plugin.",
   "author": {
     "name": "Federico Calò",

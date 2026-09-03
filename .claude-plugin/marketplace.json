@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Foundry for Claude Code — a senior-engineering agent stack: research, development, quality, ops, PMO, economics, legal, OSS governance, with governed memory and token economy.",
-    "version": "0.1.0"
+    "version": "0.2.0"
   },
   "plugins": [
     {
@@ -155,8 +155,7 @@
     {
       "name": "foundry-growth",
       "source": "./plugins/foundry-growth",
-      "description": "Everything around the project rather than inside it: positioning and messaging, launch and audience, fundraising narrative and funder targeting, personal reputation, and finding collaborators in your own field.",
-      "version": "0.1.0"
+      "description": "Everything around the project rather than inside it: positioning and messaging, launch and audience, fundraising narrative and funder targeting, personal reputation, and finding collaborators in your own field."
     },
     {
       "name": "foundry-oss",

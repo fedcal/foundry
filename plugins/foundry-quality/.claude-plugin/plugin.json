@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "foundry-quality",
   "displayName": "Foundry Quality",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Test strategy, TDD enforcement, contract and E2E testing, performance engineering, observability and SRE practice.",
   "author": {
     "name": "Federico Calò",

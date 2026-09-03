@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "foundry-pmo",
   "displayName": "Foundry PMO",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "PMO and agile delivery: roadmaps, backlog, requirements, risk, Scrum events, flow metrics and forecasting, and tracker operations across GitHub, Jira, Linear and GitLab.",
   "author": {
     "name": "Federico Calò",

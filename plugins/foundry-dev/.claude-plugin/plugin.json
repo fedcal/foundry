@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "foundry-dev",
   "displayName": "Foundry Development",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Senior engineering: architecture, functional design, protocols, security, integrations, UX/a11y, Angular, Spring Boot, databases, API and service versioning.",
   "author": {
     "name": "Federico Calò",

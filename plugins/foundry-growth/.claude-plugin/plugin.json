@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "foundry-growth",
   "displayName": "Foundry Growth",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Everything around the project rather than inside it: positioning and messaging, launch and audience, fundraising narrative and funder targeting, personal reputation, and finding collaborators in your own field.",
   "author": {
     "name": "Federico Calò",
