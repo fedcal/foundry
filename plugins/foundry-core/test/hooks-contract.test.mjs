@@ -262,6 +262,60 @@ describe('prompt-context', () => {
     assert.equal(stderr, '');
     assert.equal(status, 0);
   });
+
+  /**
+   * The runbook half of this hook is the mechanism behind the standing "read the
+   * runbook first" rule: if the trigger match stops firing, nothing announces the
+   * runbook and the agent improvises the procedure the runbook exists to prevent.
+   * It had no test at all — the whole filter and its output block were unexecuted.
+   */
+  function runbook(root, slug, frontmatter) {
+    fs.mkdirSync(path.join(root, '.foundry', 'runbooks'), { recursive: true });
+    fs.writeFileSync(path.join(root, '.foundry', 'runbooks', `${slug}.md`), `---\n${frontmatter}\n---\n\n# ${slug}\n`);
+  }
+
+  test('a runbook whose trigger appears in the prompt is surfaced, with an instruction to follow it', () => {
+    const root = initRoot();
+    runbook(root, 'publish-release', 'title: Publish a release\ntrigger: deploy, ship, release');
+    const out = runHook('prompt-context.mjs', { prompt: 'Can you deploy the service to production now?' }, root);
+    assert.ok(out, 'expected the runbook to be announced');
+    const ctx = out.hookSpecificOutput.additionalContext;
+    assert.equal(out.hookSpecificOutput.hookEventName, 'UserPromptSubmit');
+    assert.match(ctx, /## Runbook applies/);
+    assert.match(ctx, /`publish-release` — Publish a release/);
+    assert.match(ctx, /do not improvise an alternative path/, 'announcing the runbook without saying to follow it is decoration');
+    assert.doesNotMatch(ctx, /## Relevant project memory/, 'no fact matched, so no memory section should be fabricated');
+  });
+
+  test('a runbook with no trigger is never surfaced', () => {
+    const root = initRoot();
+    runbook(root, 'untriggered', 'title: Something manual');
+    assert.equal(runHook('prompt-context.mjs', { prompt: 'Please do something manual for me today.' }, root), null,
+      'an empty trigger must not match every prompt');
+  });
+
+  test('a trigger token of three characters or fewer cannot match', () => {
+    const root = initRoot();
+    runbook(root, 'noisy', 'title: Noisy runbook\ntrigger: ci, qa');
+    assert.equal(runHook('prompt-context.mjs', { prompt: 'how do we run ci and qa on this branch?' }, root), null,
+      'short tokens are substring-matched against the whole prompt, so they would fire on almost anything');
+  });
+
+  test('a prompt that matches neither a fact nor a runbook stays silent', () => {
+    const root = initRoot();
+    runbook(root, 'publish-release', 'title: Publish a release\ntrigger: deploy, ship, release');
+    writeFact(root, { title: 'Auth uses Keycloak', body: 'Delegated identity.', type: 'decision' }, '2026-08-27');
+    assert.equal(runHook('prompt-context.mjs', { prompt: 'What is the weather in Reykjavik tomorrow?' }, root), null,
+      'injecting unrelated context into every prompt is how a memory tier becomes noise the model learns to skip');
+  });
+
+  test('the legacy user_prompt field is still read when prompt is absent', () => {
+    const root = initRoot();
+    runbook(root, 'publish-release', 'title: Publish a release\ntrigger: deploy, ship, release');
+    const out = runHook('prompt-context.mjs', { user_prompt: 'Can you deploy the service to production now?' }, root);
+    assert.ok(out, 'the fallback arm is what a caller on an older payload shape lands on');
+    assert.match(out.hookSpecificOutput.additionalContext, /publish-release/);
+  });
 });
 
 describe('precompact-persist', () => {
