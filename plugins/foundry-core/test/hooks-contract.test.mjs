@@ -532,6 +532,139 @@ describe('session-start: the two arms that only fire on a populated project', ()
   });
 });
 
+/**
+ * stop-verify decides whether a completion claim is backed by evidence, and every
+ * arm below is the difference between a gate that blocks and one that does not.
+ * The suite reached this file with only the happy "block" path exercised: the
+ * short-circuits that let a turn through were all unproven, and a gate that lets
+ * everything through looks exactly like a gate that is working until it matters.
+ */
+describe('stop-verify: the arms that decide whether a completion claim is evidence-backed', () => {
+  const CLAIM = 'Done — all tests pass.';
+
+  /**
+   * A transcript on disk, one JSON entry per line, in the order Claude Code
+   * appends them: a tool_result always follows the tool_use it answers, so a
+   * backwards walk meets the result first. A plain string is written verbatim,
+   * which is how a test plants a line the parser cannot read.
+   */
+  function transcript(root, name, entries) {
+    const file = path.join(root, name);
+    const body = entries.map((e) => (typeof e === 'string' ? e : JSON.stringify(e))).join('\n');
+    // The trailing newline is deliberate: real transcripts have one, and it is
+    // what makes the loop's blank-line skip fire.
+    fs.writeFileSync(file, `${body}\n`);
+    return file;
+  }
+
+  const bash = (command, id = 'tu-1') => ({ message: { role: 'assistant', content: [{ type: 'tool_use', id, name: 'Bash', input: { command } }] } });
+  const result = (toolUseId, isError = false) => ({ message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: toolUseId, is_error: isError }] } });
+  /** No `message` envelope: the older transcript shape, read through entry.role/entry.content. */
+  const userSays = (text) => ({ role: 'user', content: text });
+
+  const stop = (root, extra = {}) => runHook('stop-verify.mjs', { last_assistant_message: CLAIM, ...extra }, root);
+
+  test('a successful verification run in the turn lets the claim through', () => {
+    const root = initRoot();
+    const t = transcript(root, 'ok.jsonl', [userSays('please fix the build'), bash('npm test'), result('tu-1')]);
+    assert.equal(stop(root, { transcript_path: t }), null, 'a passing `npm test` in this turn is exactly the evidence the gate asks for');
+  });
+
+  test('a verification run that failed is not evidence of a passing build', () => {
+    const root = initRoot();
+    const t = transcript(root, 'failed.jsonl', [userSays('please fix the build'), bash('npm test'), result('tu-1', true)]);
+    const out = stop(root, { transcript_path: t });
+    // is_error also covers a call the user rejected at the permission prompt: it never ran.
+    assert.equal(out?.decision, 'block', 'a red run must not satisfy a claim that everything passes');
+  });
+
+  test('a verification run with no recorded result still counts — the gate fails open, not shut', () => {
+    const root = initRoot();
+    // A silent success (eslint) and a run whose result block never made it into the
+    // transcript are indistinguishable here, and only is_error:true disqualifies a run.
+    const t = transcript(root, 'noresult.jsonl', [userSays('please fix the build'), bash('npm run lint')]);
+    assert.equal(stop(root, { transcript_path: t }), null);
+  });
+
+  test('a verification run from a previous turn does not back the claim made in this one', () => {
+    const root = initRoot();
+    const t = transcript(root, 'stale.jsonl', [
+      bash('npm test', 'tu-old'),
+      result('tu-old'),
+      userSays('now add the changelog entry'), // the boundary the backwards walk stops at
+      { message: { role: 'assistant', content: [{ type: 'tool_use', id: 'tu-2', name: 'Edit', input: { file_path: 'CHANGELOG.md' } }] } },
+    ]);
+    assert.equal(stop(root, { transcript_path: t })?.decision, 'block', 'evidence from before this turn opened is not evidence about this claim');
+  });
+
+  test('a command that only prints the name of a runner has run nothing', () => {
+    const root = initRoot();
+    for (const command of ['echo "npm test is green"', 'git commit -m "npm test green"']) {
+      const t = transcript(root, `mentions-${Buffer.from(command).toString('hex').slice(0, 8)}.jsonl`, [userSays('wrap it up'), bash(command), result('tu-1')]);
+      assert.equal(stop(root, { transcript_path: t })?.decision, 'block', `\`${command}\` mentions a runner, it does not run one`);
+    }
+  });
+
+  test('a Bash command that is not a verification command does not back the claim', () => {
+    const root = initRoot();
+    const t = transcript(root, 'not-verify.jsonl', [userSays('wrap it up'), bash('ls -la src/'), result('tu-1')]);
+    assert.equal(stop(root, { transcript_path: t })?.decision, 'block');
+  });
+
+  test('an unparseable transcript line is skipped, not treated as the end of the evidence', () => {
+    const root = initRoot();
+    // If the per-line parse threw instead of continuing, the outer catch would call
+    // noOpinion() and the gate would go silent — so `block` here is what proves the skip.
+    // The corrupt line has to sit inside the turn — after the user message the
+    // backwards walk stops at — or it is never read and the test proves nothing.
+    const t = transcript(root, 'garbage.jsonl', [userSays('wrap it up'), '{ this line is not json', bash('ls -la'), result('tu-1')]);
+    assert.equal(stop(root, { transcript_path: t })?.decision, 'block', 'one corrupt line must not disarm the gate');
+  });
+
+  test('an unreadable transcript never blocks: no evidence of evidence is not proof of absence', () => {
+    const root = initRoot();
+    assert.equal(stop(root, {}), null, 'a missing transcript_path must fail open, not block the user out of their session');
+    assert.equal(stop(root, { transcript_path: path.join(root, 'does-not-exist.jsonl') }), null);
+  });
+
+  test('stop_hook_active short-circuits: the gate does not block the continuation it forced', () => {
+    const root = initRoot();
+    const t = transcript(root, 'active.jsonl', [userSays('wrap it up'), bash('ls -la'), result('tu-1')]);
+    assert.equal(stop(root, { transcript_path: t, stop_hook_active: true }), null, 'blocking twice only burns turns on a project whose runner this gate cannot recognise');
+  });
+
+  test('verifyOnStop: false switches the gate off', () => {
+    const root = initRoot();
+    fs.writeFileSync(path.join(root, '.foundry', 'config.json'), JSON.stringify({ verifyOnStop: false }));
+    const t = transcript(root, 'off.jsonl', [userSays('wrap it up'), bash('ls -la'), result('tu-1')]);
+    assert.equal(stop(root, { transcript_path: t }), null);
+  });
+
+  test('enforcement: off switches the gate off', () => {
+    const root = initRoot();
+    fs.writeFileSync(path.join(root, '.foundry', 'config.json'), JSON.stringify({ enforcement: 'off' }));
+    const t = transcript(root, 'enf-off.jsonl', [userSays('wrap it up'), bash('ls -la'), result('tu-1')]);
+    assert.equal(stop(root, { transcript_path: t }), null);
+  });
+
+  test('enforcement: warn does NOT switch it off — verifyOnStop governs this gate (fact-0009)', () => {
+    const root = initRoot();
+    fs.writeFileSync(path.join(root, '.foundry', 'config.json'), JSON.stringify({ enforcement: 'warn', verifyOnStop: true }));
+    const t = transcript(root, 'warn.jsonl', [userSays('wrap it up'), bash('ls -la'), result('tu-1')]);
+    const out = stop(root, { transcript_path: t });
+    assert.equal(out?.decision, 'block', 'warn softens the Bash rules and nothing else; a config that reports a gate as on while it does nothing is worse than no gate');
+    const events = fs.readFileSync(path.join(root, '.foundry', 'metrics', 'events.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
+    assert.ok(events.some((e) => e.kind === 'gate_blocked' && e.gate === 'verify-before-claiming'), 'a block the operator cannot see in the metrics is a block they cannot tune');
+  });
+
+  test('a turn that claims nothing is never inspected at all', () => {
+    const root = initRoot();
+    const t = transcript(root, 'noclaim.jsonl', [userSays('wrap it up'), bash('ls -la'), result('tu-1')]);
+    assert.equal(runHook('stop-verify.mjs', { last_assistant_message: 'I verified the file exists, I have not run anything yet.', transcript_path: t }, root), null,
+      'truthful hedged prose is exactly what the anchored CLAIM regex exists to let through');
+  });
+});
+
 describe('robustness: malformed JSON and missing fields never crash a hook or write to stderr', () => {
   for (const file of ALL_HOOK_FILES) {
     test(`${file} handles malformed JSON on stdin`, () => {
