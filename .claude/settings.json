@@ -49,16 +49,7 @@
       "Write(**)",
       "Edit(**)"
     ],
-    "ask": [
-      "Bash(git push:*)",
-      "Bash(git tag:*)",
-      "Bash(gh release:*)",
-      "Bash(gh repo create:*)",
-      "Bash(npm publish:*)",
-      "Bash(docker push:*)",
-      "Bash(kubectl apply:*)",
-      "Bash(terraform apply:*)"
-    ],
+    "ask": [],
     "deny": [
       "Read(./.env)",
       "Read(./.env.*)",
