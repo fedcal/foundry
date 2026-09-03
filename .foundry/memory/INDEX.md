@@ -9,4 +9,5 @@ Retrieval: ask the `foundry` MCP server (`memory_search`) for the full text of a
 - **fact-0006** · constraint · Compliance output never asserts compliance from absence of evidence `compliance` `honesty`
 - **fact-0003** · convention · Published contract schemas are never edited; a breaking change adds vN+1 `contracts` `versioning`
 - **fact-0007** · convention · GitHub Actions are pinned by commit SHA, never by moving tag `ci` `security`
+- **fact-0010** · convention · Every plugin's tests run from one glob: plugins/*/test/*.test.mjs `testing` `ci` `hooks`
 - **fact-0005** · risk · Bundled Claude Code documentation in plugin caches can be many months stale `documentation` `verification`
