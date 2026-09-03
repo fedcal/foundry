@@ -28,15 +28,32 @@ when every box is ticked — not when the work "feels finished".
 
 The kernel is the part every user runs. Today its weakest file is the one they run *first*.
 
-- [ ] `scripts/install.mjs` reaches **≥ 85%** line and **≥ 75%** branch coverage — it is at
+- [x] `scripts/install.mjs` reaches **≥ 85%** line and **≥ 75%** branch coverage — it is at
       60.92% / 51.02% and is the first code a new user executes.
-- [ ] Kernel overall reaches **≥ 90%** line and **≥ 80%** branch coverage — currently
-      87.67% / 70.19%.
-- [ ] No hook file sits below **50%** branch coverage. Today `validate-contract.mjs` (28.57%),
+      **Met: 100.00% / 75.34%.**
+- [x] Kernel overall reaches **≥ 90%** line and **≥ 80%** branch coverage — currently
+      87.67% / 70.19%. **Met: 96.75% / 83.04%.**
+- [x] No hook file sits below **50%** branch coverage. Today `validate-contract.mjs` (28.57%),
       `session-start.mjs` (25.00%), `subagent-firewall.mjs` (25.00%) and `stop-verify.mjs`
       (16.67%) do — a gate whose failure branch is untested is a gate nobody has proven blocks.
-- [ ] `session-start.mjs` has non-zero function coverage (currently **0.00%**).
-- [ ] Coverage is enforced in CI, so it cannot silently regress.
+      **Met: the lowest is 50.00%** (`precompact-persist.mjs`, `session-start.mjs`), and four
+      hooks are at 100%.
+- [x] `session-start.mjs` has non-zero function coverage (currently **0.00%**).
+      **Met: 100.00%.**
+- [x] Coverage is enforced in CI, so it cannot silently regress. **Met:** the test job runs
+      `--test-coverage-lines=96 --test-coverage-branches=82 --test-coverage-functions=94`,
+      verified to exit non-zero when a threshold is not reached.
+
+Two things found along the way that the criteria above did not ask for, and should have:
+
+- `plugins/foundry-growth/hooks/guard-claims.mjs` shipped in 0.1.0 with **no test at all**,
+  because the test command named one plugin and it lives in another. The glob is now
+  `plugins/*/test/*.test.mjs` (AUTHORING.md §1.7) and the hook has 163 tests. A coverage
+  percentage says nothing about a file the measurement never loaded.
+- A coverage figure was being read off the author's own machine: the `foundry tokens` tests
+  inherited `process.env`, so the subprocess read the real `~/.claude/settings.json` and one
+  arm counted as covered because that laptop had plugins enabled. It now runs under an
+  isolated `HOME`. A number that changes with whose machine produced it is not a measurement.
 
 ### 0.3.0 — Survive contact with a real project
 

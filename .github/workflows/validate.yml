@@ -27,8 +27,19 @@ jobs:
           node-version: 22
       - name: Validate plugin manifests, agents, skills, hooks and workflows
         run: node scripts/validate-assets.mjs
-      - name: Unit tests for every plugin
-        run: node --test 'plugins/*/test/*.test.mjs'
+      - name: Unit tests for every plugin, with a coverage floor
+        # The thresholds fail the run, so coverage cannot regress unnoticed — which is how it
+        # got low enough to need a four-wave repair. They sit about a point under what the
+        # suite currently measures (96.75 line / 83.04 branch / 95.10 funcs): enough headroom
+        # for the ~0.07 run-to-run variance observed in lib/foundry.mjs, not enough to hide a
+        # real loss. Raise them when the suite clears the next point; never lower them to make
+        # a red build green.
+        run: >
+          node --test --experimental-test-coverage
+          --test-coverage-lines=96
+          --test-coverage-branches=82
+          --test-coverage-functions=94
+          'plugins/*/test/*.test.mjs'
       - name: Syntax check every executable asset
         run: |
           set -euo pipefail
