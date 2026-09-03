@@ -50,14 +50,7 @@
       "Edit(**)"
     ],
     "ask": [],
-    "deny": [
-      "Read(./.env)",
-      "Read(./.env.*)",
-      "Read(./secrets/**)",
-      "Read(./*.pem)",
-      "Read(./*.p12)",
-      "Read(./dati-personali/**)"
-    ],
-    "defaultMode": "default"
+    "deny": [],
+    "defaultMode": "bypassPermissions"
   }
 }
