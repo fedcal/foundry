@@ -22,12 +22,15 @@ const cfg = config(root);
 if (cfg.enforcement === 'off') noOpinion();
 
 const HARD_LIMIT_MULTIPLIER = 3;
-const DEFAULT_BUDGET = 300;
 const tokens = estimateTokens(message);
-// A null or non-numeric budget in config.json turned the hard limit into NaN or 0,
-// which denied every handoff — including a four-token one.
-const configured = Number(cfg.handoffSummaryTokenBudget);
-const budget = Number.isFinite(configured) && configured > 0 ? configured : DEFAULT_BUDGET;
+// A null or non-numeric budget in config.json once turned the hard limit into NaN or 0,
+// which denied every handoff — including a four-token one. That fix belongs in `config()`
+// and now lives there: CONFIG_RULES refuses any `handoffSummaryTokenBudget` that is not a
+// finite positive number and substitutes the default, so what arrives here is always
+// usable. Re-checking it in this file produced a branch no input could reach — dead code
+// that reads as a live guard, which is worse than no guard because it invites trust.
+// The guarantee is pinned by the config-validation tests, where it is actually made.
+const budget = cfg.handoffSummaryTokenBudget;
 const hardLimit = budget * HARD_LIMIT_MULTIPLIER;
 
 recordMetric(root, { kind: 'subagent_return', agent: input.agent_type, tokens });

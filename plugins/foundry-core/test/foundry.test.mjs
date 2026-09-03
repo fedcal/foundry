@@ -9,6 +9,7 @@ import {
   parseFrontmatter, stringifyFrontmatter, estimateTokens,
   ensureDirs, writeFact, activeFacts, listFacts, searchFacts, buildIndex,
   validate, loadSchema, activeOverride, overrideStatus, paths,
+  config, configIssues,
 } from '../lib/foundry.mjs';
 
 const SCHEMA_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'schemas');
@@ -235,6 +236,81 @@ describe('facts honour their own contract', () => {
       [],
     );
     fs.rmSync(dir, { recursive: true, force: true });
+  });
+});
+
+/**
+ * Every gate reads its settings through `config()`, and each one trusts the value it gets
+ * back to have the right type: `guard-write` calls `.find()` on protectedPaths,
+ * `subagent-firewall` multiplies handoffSummaryTokenBudget. That trust is only warranted
+ * because CONFIG_RULES refuses a wrong-typed value and substitutes the default — and until
+ * now nothing pinned it. A hook carrying its own second guard is the symptom, not the fix:
+ * the guard is unreachable, so it can never fail a test, and the invariant it stands in for
+ * goes unverified. These tests put the assertion where the guarantee is actually made.
+ */
+describe('config validation', () => {
+  const withConfig = (raw, fn) => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'foundry-config-'));
+    ensureDirs(dir);
+    fs.writeFileSync(paths(dir).config, typeof raw === 'string' ? raw : JSON.stringify(raw));
+    try { fn(dir); } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  };
+
+  // The bad value in each row is the plausible hand-edit, not a contrived one: the singular
+  // reading of a plural key, a quoted number, a JSON null, a nearby enum word.
+  const cases = [
+    ['indexTokenBudget', '4000', 4000],
+    ['handoffSummaryTokenBudget', null, 300],
+    ['handoffSummaryTokenBudget', 0, 300],
+    ['handoffSummaryTokenBudget', -5, 300],
+    ['enforcement', 'strict', 'gate'],
+    ['secretScan', 'true', true],
+    ['verifyOnStop', 0, true],
+  ];
+
+  for (const [key, bad, expected] of cases) {
+    test(`"${key}": ${JSON.stringify(bad)} falls back to the default and is reported`, () => {
+      withConfig({ [key]: bad }, (dir) => {
+        assert.equal(config(dir)[key], expected);
+        const issues = configIssues(dir);
+        assert.ok(issues.some((i) => i.includes(`"${key}"`)), issues.join('; ') || '(no issues reported)');
+      });
+    });
+  }
+
+  test('"protectedPaths" as a bare string cannot disarm the write gate', () => {
+    // This is the failure the rules were written for: a string reached guard-write.mjs and
+    // threw `protectedGlobs.find is not a function`, the hook exited non-zero, and Claude
+    // Code treats a hook error as non-blocking — so the write went through unguarded.
+    withConfig({ protectedPaths: '**/*.lock' }, (dir) => {
+      const paths_ = config(dir).protectedPaths;
+      assert.ok(Array.isArray(paths_), 'protectedPaths must never reach a gate as a string');
+      assert.ok(paths_.includes('**/*.lock'), 'the built-in default must still be in force');
+      assert.ok(configIssues(dir).some((i) => i.includes('note the plural')));
+    });
+  });
+
+  test('a config.json that is not valid JSON leaves every default in force', () => {
+    withConfig('{ "enforcement": ', (dir) => {
+      assert.equal(config(dir).enforcement, 'gate');
+      assert.equal(config(dir).verifyOnStop, true);
+      assert.ok(configIssues(dir).some((i) => i.includes('not valid JSON')));
+    });
+  });
+
+  test('an unknown setting is kept but reported, because a misspelled key is a silent no-op', () => {
+    withConfig({ protectedPath: ['x'] }, (dir) => {
+      assert.deepEqual(config(dir).protectedPath, ['x'], 'unknown keys survive a profile rewrite');
+      assert.ok(configIssues(dir).some((i) => i.includes('unknown setting "protectedPath"')));
+    });
+  });
+
+  test('a valid value is honoured — the rules must not reject everything', () => {
+    withConfig({ handoffSummaryTokenBudget: 1200, enforcement: 'warn' }, (dir) => {
+      assert.equal(config(dir).handoffSummaryTokenBudget, 1200);
+      assert.equal(config(dir).enforcement, 'warn');
+      assert.deepEqual(configIssues(dir), []);
+    });
   });
 });
 
