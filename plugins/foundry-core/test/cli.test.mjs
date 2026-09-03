@@ -848,6 +848,170 @@ describe('scripts/install.mjs re-running over an existing install', () => {
   });
 });
 
+/**
+ * Local mode copies the plugins' assets into the project instead of enabling them from the
+ * marketplace, so every one of these expectations is derived from what the repository actually
+ * ships rather than from a hard-coded list that would rot the next time an agent is added.
+ */
+function pluginAgentNames(...pluginNames) {
+  const names = new Set();
+  for (const p of pluginNames) {
+    const dir = path.join(REPO, 'plugins', p, 'agents');
+    if (!fs.existsSync(dir)) continue;
+    for (const f of fs.readdirSync(dir)) if (f.endsWith('.md')) names.add(f);
+  }
+  return [...names].sort();
+}
+
+function pluginSkillNames(...pluginNames) {
+  const names = new Set();
+  for (const p of pluginNames) {
+    const dir = path.join(REPO, 'plugins', p, 'skills');
+    if (!fs.existsSync(dir)) continue;
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) if (e.isDirectory()) names.add(e.name);
+  }
+  return [...names].sort();
+}
+
+/** Every hook (type, command, args) triple in a settings.json, keyed the way mergeHooks keys them. */
+function hookKeysByEvent(settings) {
+  const out = {};
+  for (const [event, entries] of Object.entries(settings.hooks || {})) {
+    out[event] = entries.flatMap((e) => (e.hooks || []).map((h) => JSON.stringify([h.type, h.command, h.args || []])));
+  }
+  return out;
+}
+
+describe('scripts/install.mjs --mode local', () => {
+  test('copies every agent and skill of the selected plugins into .claude/', () => {
+    const dir = makeProject();
+    const r = runInstall(['--target', dir, '--mode', 'local', '--plugins', 'foundry-core,foundry-dev']);
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+
+    const expectedAgents = pluginAgentNames('foundry-core', 'foundry-dev');
+    const copiedAgents = fs.readdirSync(path.join(dir, '.claude', 'agents')).sort();
+    assert.deepEqual(copiedAgents, expectedAgents, 'local mode must copy every agent of every selected plugin');
+
+    const expectedSkills = pluginSkillNames('foundry-core', 'foundry-dev');
+    const copiedSkills = fs.readdirSync(path.join(dir, '.claude', 'skills')).sort();
+    assert.deepEqual(copiedSkills, expectedSkills);
+
+    // copyTree is recursive: a skill is useless without its SKILL.md, and several ship
+    // reference material in subdirectories that must come across too.
+    for (const skill of copiedSkills) {
+      const skillDir = path.join(dir, '.claude', 'skills', skill);
+      assert.ok(fs.existsSync(path.join(skillDir, 'SKILL.md')), `skill ${skill} was copied without its SKILL.md`);
+      const sourceFiles = listAllFiles(path.join(REPO, 'plugins', fs.existsSync(path.join(REPO, 'plugins', 'foundry-core', 'skills', skill)) ? 'foundry-core' : 'foundry-dev', 'skills', skill));
+      assert.equal(listAllFiles(skillDir).length, sourceFiles.length, `skill ${skill} lost files in the copy`);
+    }
+
+    assert.match(r.stdout, new RegExp(`copied ${expectedAgents.length} agents and ${expectedSkills.length} skills`));
+  });
+
+  test('tells the operator to restart rather than to install from the marketplace', () => {
+    const dir = makeProject();
+    const r = runInstall(['--target', dir, '--mode', 'local', '--plugins', 'foundry-core']);
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+
+    assert.match(r.stdout, /Restart Claude Code \(or run \/reload-plugins\)/);
+    assert.match(r.stdout, /local mode pins this copy/);
+    assert.doesNotMatch(r.stdout, /plugin marketplace add/, 'local mode must not tell the user to add a marketplace it does not use');
+
+    const settings = readJson(path.join(dir, '.claude', 'settings.json'));
+    assert.equal(settings.extraKnownMarketplaces, undefined, 'local mode must not register the marketplace');
+    assert.equal(settings.enabledPlugins, undefined, 'local mode must not enable plugins it just copied by hand');
+  });
+
+  test('resolves every ${CLAUDE_PLUGIN_*} macro to a real absolute path', () => {
+    // ${CLAUDE_PLUGIN_ROOT} is only expanded for plugins installed through the marketplace.
+    // Left unresolved here, the project would get an installation whose hooks silently never
+    // fire and whose MCP server never starts — a failure with no error message anywhere.
+    const dir = makeProject();
+    const r = runInstall(['--target', dir, '--mode', 'local', '--plugins', 'foundry-core']);
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+
+    const settingsRaw = fs.readFileSync(path.join(dir, '.claude', 'settings.json'), 'utf8');
+    const mcpRaw = fs.readFileSync(path.join(dir, '.mcp.json'), 'utf8');
+    assert.doesNotMatch(settingsRaw, /\$\{CLAUDE_PLUGIN_/, 'an unresolved macro in settings.json means the hooks never run');
+    assert.doesNotMatch(mcpRaw, /\$\{CLAUDE_PLUGIN_/, 'an unresolved macro in .mcp.json means the MCP server never starts');
+
+    const settings = JSON.parse(settingsRaw);
+    const hookScripts = Object.values(settings.hooks).flatMap((entries) => entries.flatMap((e) => (e.hooks || []).flatMap((h) => h.args || [])));
+    assert.ok(hookScripts.length > 0, 'foundry-core ships hooks; if none were merged this test proves nothing');
+    for (const script of hookScripts) {
+      assert.ok(path.isAbsolute(script), `hook script path must be absolute in local mode: ${script}`);
+      assert.ok(fs.existsSync(script), `hook script does not exist on disk: ${script}`);
+    }
+
+    const server = JSON.parse(mcpRaw).mcpServers.foundry;
+    assert.ok(server, '.mcp.json must declare the foundry server');
+    const serverEntry = server.args.find((a) => a.endsWith('server.mjs'));
+    assert.ok(path.isAbsolute(serverEntry), `MCP server path must be absolute: ${serverEntry}`);
+    assert.ok(fs.existsSync(serverEntry), `MCP server does not exist on disk: ${serverEntry}`);
+  });
+
+  test('merges into an existing .mcp.json instead of replacing it', () => {
+    const dir = makeProject();
+    fs.writeFileSync(path.join(dir, '.mcp.json'), JSON.stringify({
+      mcpServers: { 'my-own-server': { command: 'node', args: ['./mine.mjs'] } },
+    }));
+
+    const r = runInstall(['--target', dir, '--mode', 'local', '--plugins', 'foundry-core']);
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+
+    const mcp = readJson(path.join(dir, '.mcp.json'));
+    assert.ok(mcp.mcpServers['my-own-server'], 'a project\'s own MCP server must survive install');
+    assert.ok(mcp.mcpServers.foundry);
+  });
+
+  test('preserves a project\'s own hook on an event Foundry also uses', () => {
+    // A shallow spread merges only at the top level, so it replaced the project's whole
+    // PreToolUse array with Foundry's — a project with its own audit or secret-scanning
+    // hook lost it silently. mergeHooks exists to stop exactly that.
+    const dir = makeProject();
+    fs.mkdirSync(path.join(dir, '.claude'), { recursive: true });
+    fs.writeFileSync(path.join(dir, '.claude', 'settings.json'), JSON.stringify({
+      hooks: { PreToolUse: [{ matcher: 'Bash', hooks: [{ type: 'command', command: './my-audit.sh' }] }] },
+    }));
+
+    const r = runInstall(['--target', dir, '--mode', 'local', '--plugins', 'foundry-core']);
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    assert.match(r.stdout, /hooks merged into events that already had entries/);
+    assert.match(r.stdout, /PreToolUse: kept 1 existing, added \d+/);
+
+    const settings = readJson(path.join(dir, '.claude', 'settings.json'));
+    const pre = settings.hooks.PreToolUse;
+    assert.equal(pre[0].hooks[0].command, './my-audit.sh', 'the project\'s own hook must stay, and stay first');
+    assert.ok(pre.length > 1, 'Foundry\'s own PreToolUse entries must be appended after it');
+    assert.ok(
+      pre.slice(1).every((e) => (e.hooks || []).every((h) => (h.args || []).some((a) => a.includes('foundry-core')))),
+      'everything appended after the project\'s hook should be Foundry\'s',
+    );
+    // The events Foundry alone uses must still arrive in full.
+    assert.ok(Array.isArray(settings.hooks.SessionStart) && settings.hooks.SessionStart.length > 0);
+  });
+
+  test('is idempotent: a second local install adds no duplicate hook entries', () => {
+    // Without the dedupe in mergeHooks, every re-run doubles the hook chain, and the project
+    // pays for each Foundry hook twice on every single tool call.
+    const dir = makeProject();
+    const first = runInstall(['--target', dir, '--mode', 'local', '--plugins', 'foundry-core']);
+    assert.equal(first.status, 0, first.stdout + first.stderr);
+    const afterFirst = hookKeysByEvent(readJson(path.join(dir, '.claude', 'settings.json')));
+    assert.ok(Object.keys(afterFirst).length > 0, 'the first install must have merged some hooks');
+
+    const second = runInstall(['--target', dir, '--mode', 'local', '--plugins', 'foundry-core']);
+    assert.equal(second.status, 0, second.stdout + second.stderr);
+    const afterSecond = hookKeysByEvent(readJson(path.join(dir, '.claude', 'settings.json')));
+
+    assert.deepEqual(afterSecond, afterFirst, 're-running the installer must not change the hook chain');
+    for (const [event, keys] of Object.entries(afterSecond)) {
+      assert.equal(new Set(keys).size, keys.length, `duplicate hook entries on ${event}: ${keys.join(', ')}`);
+    }
+    assert.match(second.stdout, /kept \d+ existing, added 0/, 'the second run must report that it added nothing');
+  });
+});
+
 describe('scripts/install.mjs permission merging', () => {
   test('never loosens a defaultMode the project already chose', () => {
     // startup-mvp asks for "acceptEdits"; the project here has already settled on "default",
