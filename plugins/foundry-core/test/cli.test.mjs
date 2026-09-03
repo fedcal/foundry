@@ -49,10 +49,18 @@ after(() => {
   for (const dir of tempDirs) fs.rmSync(dir, { recursive: true, force: true });
 });
 
-/** Run the foundry CLI in `cwd`. Never throws: returns {status, stdout, stderr}. */
-function runCli(cwd, args) {
+/**
+ * Run the foundry CLI in `cwd`. Never throws: returns {status, stdout, stderr}.
+ *
+ * `extraEnv` exists so a test can pin the parts of the environment the CLI reads but does not
+ * take as an argument — chiefly HOME, which `enabledPluginNames()` resolves through
+ * `os.homedir()` to find `~/.claude/settings.json`. Left inherited, the plugin-surface arms of
+ * `foundry tokens` are decided by whatever the developer running the suite happens to have
+ * enabled on their own machine, and pass or fail per laptop.
+ */
+function runCli(cwd, args, extraEnv = {}) {
   try {
-    const env = { ...process.env, FOUNDRY_PROJECT_DIR: cwd };
+    const env = { ...process.env, FOUNDRY_PROJECT_DIR: cwd, ...extraEnv };
     const stdout = execFileSync('node', [CLI, ...args], { cwd, env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
     return { status: 0, stdout, stderr: '' };
   } catch (err) {
@@ -375,6 +383,550 @@ describe('foundry tokens, runbooks and memory on an initialised project', () => 
     const r = runCli(dir, ['memory', 'prune']);
     assert.equal(r.status, 0, r.stderr);
     assert.match(r.stdout, /Prune candidates/);
+  });
+});
+
+/* ------------------------------------------------- CLI error and edge paths */
+
+/**
+ * Fixtures for the subcommand arms below. Everything a Foundry CLI error path needs is a
+ * file on disk in a throwaway project, so these build them and nothing else.
+ */
+
+/** A fact file in an already-initialised project. `fields` is written as flat frontmatter. */
+function writeFactFile(dir, fields, body = 'Body text.') {
+  const lines = Object.entries(fields).map(([k, v]) => `${k}: ${v}`);
+  const file = path.join(dir, '.foundry', 'memory', 'facts', `${fields.id}.md`);
+  fs.writeFileSync(file, `---\n${lines.join('\n')}\n---\n\n${body}\n`);
+  return file;
+}
+
+/** A runbook file in an already-initialised project. */
+function writeRunbookFile(dir, slug, frontmatter, body) {
+  const lines = Object.entries(frontmatter).map(([k, v]) => `${k}: ${v}`);
+  fs.writeFileSync(path.join(dir, '.foundry', 'runbooks', `${slug}.md`), `---\n${lines.join('\n')}\n---\n\n${body}\n`);
+}
+
+/** Overwrite .foundry/config.json. Absent keys still fall back to the built-in defaults. */
+function writeConfig(dir, config) {
+  fs.writeFileSync(path.join(dir, '.foundry', 'config.json'), JSON.stringify(config, null, 2) + '\n');
+}
+
+function writeSettings(dir, settings, file = 'settings.json') {
+  fs.mkdirSync(path.join(dir, '.claude'), { recursive: true });
+  const full = path.join(dir, '.claude', file);
+  fs.writeFileSync(full, typeof settings === 'string' ? settings : JSON.stringify(settings, null, 2));
+  return full;
+}
+
+/**
+ * A HOME containing no `.claude/settings.json`.
+ *
+ * `enabledPluginNames()` merges the user scope first, so without this the "no settings file
+ * names an enabled plugin" arm of `foundry tokens` is unreachable on any machine whose owner
+ * has ever run `/plugin install` — which is every machine this suite is developed on.
+ */
+function isolatedHome() {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'foundry-home-'));
+  tempDirs.push(home);
+  return { HOME: home, USERPROFILE: home };
+}
+
+/** A blackboard artifact that really does satisfy fact.v1, so a passing check is not vacuous. */
+const VALID_ARTIFACT = {
+  schema: 'fact.v1', producedBy: 'test', id: 'fact-0001', type: 'decision', scope: 'project',
+  title: 'A decision', body: 'Because reasons.', confidence: 'high', source: 'conversation', created: '2026-01-01',
+};
+
+describe('foundry with an unrecognised command', () => {
+  test('names the command, prints the command list and exits 1', () => {
+    const dir = makeProject();
+    const r = runCli(dir, ['frobnicate']);
+    assert.equal(r.status, 1);
+    assert.match(r.stderr, /Unknown command "frobnicate"/);
+    // "Unknown command" on its own leaves the user with nowhere to go, so the fallback is
+    // the usage block. It goes to stdout because help() is the same function `foundry help`
+    // calls; a user piping stderr to /dev/null still sees the recovery.
+    assert.match(r.stdout, /foundry init/);
+    assert.match(r.stdout, /foundry doctor/);
+    assert.match(r.stdout, /foundry validate <id> <file>/);
+  });
+
+  test('a mistyped subcommand of a real command is still reported against the top-level name', () => {
+    const dir = makeProject();
+    const r = runCli(dir, ['docter']);
+    assert.equal(r.status, 1);
+    assert.match(r.stderr, /Unknown command "docter"/);
+  });
+});
+
+describe('foundry help', () => {
+  // `foundry init` is the answer to most Foundry error messages, so the usage block that
+  // carries it must be reachable by every route a lost user tries.
+  for (const argv of [[], ['help'], ['--help'], ['-h']]) {
+    test(`\`foundry ${argv.join(' ')}\`.trim() prints the usage block and exits 0`, () => {
+      const dir = makeProject();
+      const r = runCli(dir, argv);
+      assert.equal(r.status, 0, r.stderr);
+      for (const line of [
+        /foundry init/, /foundry doctor/, /foundry memory index/, /foundry memory search/,
+        /foundry memory prune/, /foundry tokens/, /foundry runbooks/, /foundry validate/,
+        /foundry profile/,
+      ]) assert.match(r.stdout, line);
+    });
+  }
+
+  test('states which project root it resolved, so a command run in the wrong tree is visible', () => {
+    const dir = makeProject();
+    const r = runCli(dir, ['help']);
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, new RegExp(`Project root: ${fs.realpathSync(dir).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`));
+  });
+});
+
+describe('foundry memory argument handling', () => {
+  test('an unrecognised subcommand exits 1 and lists the three that exist', () => {
+    const dir = makeProject();
+    runCli(dir, ['init']);
+    const r = runCli(dir, ['memory', 'forget']);
+    assert.equal(r.status, 1);
+    assert.match(r.stderr, /Usage: foundry memory \[index\|search <query>\|prune\]/);
+  });
+
+  test('`memory search` with no query is rejected as an unknown subcommand rather than matching everything', () => {
+    // `search` with an empty query used to be a plausible "list all facts": it is not, and the
+    // usage line is the only thing that says so.
+    const dir = makeProject();
+    runCli(dir, ['init']);
+    writeFactFile(dir, { id: 'fact-0001', type: 'convention', scope: 'project', title: 'Tests spawn the CLI', confidence: 'high' });
+    const r = runCli(dir, ['memory', 'search']);
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /No match\./);
+  });
+
+  test('`memory search` prints id, type and confidence for every hit', () => {
+    const dir = makeProject();
+    runCli(dir, ['init']);
+    writeFactFile(dir, {
+      id: 'fact-0042', type: 'constraint', scope: 'project', confidence: 'high',
+      title: 'The kernel has zero runtime dependencies',
+    }, 'No npm install is ever required.');
+
+    const r = runCli(dir, ['memory', 'search', 'runtime dependencies']);
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /fact-0042\s+\[constraint\/high\]\s+The kernel has zero runtime dependencies/);
+  });
+});
+
+describe('foundry memory prune', () => {
+  test('groups every kind of prune candidate under its own heading and deletes nothing', () => {
+    const dir = makeProject();
+    runCli(dir, ['init']);
+    writeFactFile(dir, { id: 'fact-0001', type: 'convention', scope: 'project', confidence: 'high', title: 'Expired rule', expires: '2020-01-01' });
+    writeFactFile(dir, { id: 'fact-0002', type: 'convention', scope: 'project', confidence: 'high', title: 'Old rule' });
+    writeFactFile(dir, { id: 'fact-0003', type: 'convention', scope: 'project', confidence: 'high', title: 'New rule', supersedes: 'fact-0002' });
+    writeFactFile(dir, { id: 'fact-0004', type: 'decision', scope: 'project', confidence: 'high', title: 'A decision with no reasoning' }, 'It just is.');
+    writeFactFile(dir, { id: 'fact-0005', type: 'domain', scope: 'project', confidence: 'high', title: 'Same title twice' });
+    writeFactFile(dir, { id: 'fact-0006', type: 'domain', scope: 'project', confidence: 'high', title: 'Same title twice' });
+
+    const r = runCli(dir, ['memory', 'prune']);
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /expired:\n\s+- fact-0001 — expired 2020-01-01/);
+    assert.match(r.stdout, /superseded:\n\s+- fact-0002 — superseded by a newer fact/);
+    assert.match(r.stdout, /missing reasoning:\n\s+- fact-0004 — add a \*\*Why:\*\* line/);
+    assert.match(r.stdout, /duplicate titles:\n\s+- fact-0005 \/ fact-0006/);
+    assert.match(r.stdout, /Retire a fact by setting `expires`, not by deleting it/);
+
+    // "Prune" naming a destructive-sounding command must not be destructive.
+    assert.equal(fs.readdirSync(path.join(dir, '.foundry', 'memory', 'facts')).length, 6,
+      'prune reports candidates; deleting them is the operator\'s decision, never the CLI\'s');
+  });
+
+  test('names the facts that fall outside the index token budget, caps the list and says how to fix it', () => {
+    // doctor's failing budget check and the INDEX.md truncation footer both send the operator
+    // to `memory prune`, and prune knew only about expired/superseded/malformed facts — none of
+    // which shrink a healthy index. A project of valid facts got an empty answer here.
+    const dir = makeProject();
+    runCli(dir, ['init']);
+    writeConfig(dir, { indexTokenBudget: 1 });
+    for (let i = 1; i <= 41; i += 1) {
+      writeFactFile(dir, {
+        id: `fact-${String(i).padStart(4, '0')}`, type: 'convention', scope: 'project',
+        confidence: 'high', title: `Convention number ${i}`,
+      });
+    }
+
+    const r = runCli(dir, ['memory', 'prune']);
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /outside the ~1-token index budget \(41 facts, lowest priority first\)/);
+    assert.match(r.stdout, /- fact-0001 · convention · Convention number 1/);
+    assert.match(r.stdout, /\.\.\. and 1 more/, 'the list is capped at 40 entries and must say how many it withheld');
+    assert.match(r.stdout, /retrievable with `memory_search` but never reach the always-loaded index/);
+    assert.match(r.stdout, /raise\n\s+`indexTokenBudget` in \.foundry\/config\.json/);
+  });
+});
+
+describe('foundry validate argument handling', () => {
+  for (const argv of [['validate'], ['validate', 'fact.v1']]) {
+    test(`\`foundry ${argv.join(' ')}\` exits 1 showing the argument order it expects`, () => {
+      const dir = makeProject();
+      const r = runCli(dir, argv);
+      assert.equal(r.status, 1);
+      assert.match(r.stderr, /Usage: foundry validate <schema-id> <path-to-json>/);
+    });
+  }
+
+  test('a file containing invalid JSON is reported by name, not as a stack trace', () => {
+    const dir = makeProject();
+    const file = path.join(dir, 'truncated.json');
+    fs.writeFileSync(file, '{"schema": "fact.v1",');
+    const r = runCli(dir, ['validate', 'fact.v1', 'truncated.json']);
+    assert.equal(r.status, 1);
+    assert.match(r.stderr, /Cannot read truncated\.json: /);
+    assert.doesNotMatch(r.stderr, /at Object\.readFileSync|node:internal|at ModuleJob\.run/);
+  });
+});
+
+describe('foundry profile input validation', () => {
+  // A profile id names a file in the profiles directory and nothing else. Interpolating the
+  // argument straight into a path let `foundry profile ../../something` read and apply an
+  // arbitrary JSON file from anywhere on disk.
+  for (const name of ['../../etc/passwd', '/etc/passwd', 'Startup-MVP', '1startup', 'startup_mvp', '.']) {
+    test(`rejects "${name}" as a profile id without touching the project`, () => {
+      const dir = makeProject();
+      const r = runCli(dir, ['profile', name]);
+      assert.equal(r.status, 1);
+      assert.match(r.stderr, /is not a profile id/);
+      assert.match(r.stderr, /run `foundry profile` to list them/,
+        'the rejection must point at the command that shows the ids that do work');
+      assert.equal(fs.existsSync(path.join(dir, '.claude')), false, 'a rejected id must not half-configure the project');
+      assert.equal(fs.existsSync(path.join(dir, '.foundry')), false);
+    });
+  }
+
+  test('refuses to apply a profile over a settings.json that is not a JSON object, and leaves it byte-identical', () => {
+    // `readJson() || {}` treated "not valid JSON" as "no file", and the write then replaced the
+    // user's settings with a profile-only object — discarding hooks, env, model and every
+    // permission rule. Claude Code itself rejects a settings file with a trailing comma, so
+    // this is a state users really reach.
+    const dir = makeProject();
+    const raw = '{ "permissions": { "allow": [] }, }';
+    const settingsPath = writeSettings(dir, raw);
+
+    const r = runCli(dir, ['profile', 'startup-mvp']);
+    assert.equal(r.status, 1);
+    assert.match(r.stderr, /Refusing to apply a profile: .*settings\.json is not a JSON object/);
+    assert.match(r.stderr, /Fix the file, then re-run\./, 'the refusal must state the recovery, not just the refusal');
+    assert.equal(fs.readFileSync(settingsPath, 'utf8'), raw, 'a file we cannot read is a file we must not overwrite');
+  });
+
+  test('refuses a settings.json that parses as an array rather than an object', () => {
+    const dir = makeProject();
+    const raw = JSON.stringify(['not', 'a', 'settings', 'object']);
+    const settingsPath = writeSettings(dir, raw);
+
+    const r = runCli(dir, ['profile', 'oss-library']);
+    assert.equal(r.status, 1);
+    assert.match(r.stderr, /is not a JSON object/);
+    assert.equal(fs.readFileSync(settingsPath, 'utf8'), raw);
+  });
+});
+
+describe('foundry init on a project that already has a .gitignore', () => {
+  test('appends its block without welding it onto an unterminated last line', () => {
+    // appendFileSync onto a file whose last line has no newline produced
+    // "node_modules# Foundry (session-local state)", silently turning the project's own last
+    // ignore rule into a comment.
+    const dir = makeProject();
+    fs.writeFileSync(path.join(dir, '.gitignore'), 'node_modules');
+
+    const r = runCli(dir, ['init']);
+    assert.equal(r.status, 0, r.stderr);
+
+    const gitignore = fs.readFileSync(path.join(dir, '.gitignore'), 'utf8');
+    assert.match(gitignore, /^node_modules\n/, 'the project\'s own last rule must survive intact on its own line');
+    assert.match(gitignore, /\.foundry\/blackboard\//);
+    assert.doesNotMatch(gitignore, /node_modules#/);
+  });
+
+  test('adds only the entries that are missing when some are already present', () => {
+    const dir = makeProject();
+    fs.writeFileSync(path.join(dir, '.gitignore'), '.foundry/scratch/\n');
+
+    runCli(dir, ['init']);
+    const gitignore = fs.readFileSync(path.join(dir, '.gitignore'), 'utf8');
+    assert.equal((gitignore.match(/\.foundry\/scratch\//g) || []).length, 1);
+    assert.match(gitignore, /\.foundry\/metrics\//);
+    assert.match(gitignore, /\.foundry\/blackboard\//);
+  });
+});
+
+describe('foundry doctor deep checks', () => {
+  test('fails when a mutating runbook documents no rollback, and names the runbook', () => {
+    const dir = makeProject();
+    runCli(dir, ['init']);
+    writeRunbookFile(dir, 'ship-it', { title: 'Release to production' }, 'Run the deploy script and migrate the database.');
+
+    const r = runCli(dir, ['doctor']);
+    assert.equal(r.status, 1, r.stdout);
+    assert.match(r.stdout, /FAIL\s+1 runbooks, all mutating ones document rollback/);
+    assert.match(r.stdout, /ship-it/, 'naming the runbook is the whole remediation');
+  });
+
+  test('passes a mutating runbook that does document rollback, and a non-mutating one that does not', () => {
+    const dir = makeProject();
+    runCli(dir, ['init']);
+    writeRunbookFile(dir, 'ship-it', { title: 'Release to production' }, 'Run the deploy script.\n\n## Rollback\n\nRevert the tag.');
+    writeRunbookFile(dir, 'read-logs', { title: 'Read the logs' }, 'Tail the log file. Nothing here changes state.');
+
+    const r = runCli(dir, ['doctor']);
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    assert.match(r.stdout, /ok\s+2 runbooks, all mutating ones document rollback/);
+  });
+
+  test('fails on duplicate fact titles and names both ids', () => {
+    // Two facts with one title is how a memory index starts lying: retrieval returns one of
+    // them arbitrarily, and which one changes with directory order.
+    const dir = makeProject();
+    runCli(dir, ['init']);
+    writeFactFile(dir, { id: 'fact-0001', type: 'domain', scope: 'project', confidence: 'high', title: 'Billing runs nightly' });
+    writeFactFile(dir, { id: 'fact-0002', type: 'domain', scope: 'project', confidence: 'high', title: 'billing runs nightly' });
+
+    const r = runCli(dir, ['doctor']);
+    assert.equal(r.status, 1, r.stdout);
+    assert.match(r.stdout, /FAIL\s+no duplicate fact titles/);
+    assert.match(r.stdout, /fact-0001 \/ fact-0002/, 'matching is case-insensitive, and both ids must be named');
+  });
+
+  test('fails a decision or risk fact that records no reasoning, and names it', () => {
+    const dir = makeProject();
+    runCli(dir, ['init']);
+    writeFactFile(dir, { id: 'fact-0001', type: 'decision', scope: 'project', confidence: 'high', title: 'We chose Postgres' }, 'We use Postgres.');
+    writeFactFile(dir, { id: 'fact-0002', type: 'risk', scope: 'project', confidence: 'high', title: 'The queue may back up' }, 'It might.');
+    writeFactFile(dir, { id: 'fact-0003', type: 'decision', scope: 'project', confidence: 'high', title: 'We chose Node' }, '**Why:** no runtime dependencies.');
+
+    const r = runCli(dir, ['doctor']);
+    assert.equal(r.status, 1, r.stdout);
+    assert.match(r.stdout, /FAIL\s+every decision and risk records its reasoning/);
+    assert.match(r.stdout, /fact-0001, fact-0002/);
+    assert.doesNotMatch(r.stdout, /fact-0003/, 'a fact that does carry a **Why:** line must not be reported');
+  });
+
+  test('fails on an expired gate override still sitting in overrides.json, and names the gate', () => {
+    // An expired override stops applying silently: the gate it was hiding comes back with no
+    // announcement, and the stale entry stays in the file looking like it is still in force.
+    const dir = makeProject();
+    runCli(dir, ['init']);
+    fs.writeFileSync(path.join(dir, '.foundry', 'overrides.json'), JSON.stringify({
+      overrides: [
+        { gate: 'rm-recursive-force', reason: 'one-off cleanup', expires: '2020-01-01' },
+        { gate: 'secret-scan', reason: 'still needed', expires: '2999-01-01' },
+      ],
+    }, null, 2));
+
+    const r = runCli(dir, ['doctor']);
+    assert.equal(r.status, 1, r.stdout);
+    assert.match(r.stdout, /FAIL\s+no expired gate overrides still in the file/);
+    assert.match(r.stdout, /rm-recursive-force/);
+    assert.doesNotMatch(r.stdout, /secret-scan/, 'an override that has not expired is not a finding');
+  });
+
+  test('reports every setting whose type is wrong, rather than letting the gate that reads it die', () => {
+    // `"protectedPaths": "**/*.lock"` parses as JSON, so configState is "ok"; it used to reach
+    // guard-write.mjs as a string and throw, and Claude Code treats a throwing PreToolUse hook
+    // as non-blocking — the write went through. A rejected setting has to be said out loud.
+    const dir = makeProject();
+    runCli(dir, ['init']);
+    writeConfig(dir, { enforcement: 'gate', protectedPaths: '**/*.lock', secretScan: 'yes' });
+
+    const r = runCli(dir, ['doctor']);
+    assert.equal(r.status, 1, r.stdout);
+    assert.match(r.stdout, /FAIL\s+every setting in config\.json has the right type/);
+    assert.match(r.stdout, /"protectedPaths" must be an array of glob strings/);
+    assert.match(r.stdout, /"secretScan" must be true or false/);
+  });
+
+  test('fails an enforcement level that is not one of gate, warn or off', () => {
+    const dir = makeProject();
+    runCli(dir, ['init']);
+    writeConfig(dir, { enforcement: 'paranoid' });
+
+    const r = runCli(dir, ['doctor']);
+    assert.equal(r.status, 1, r.stdout);
+    // The value is refused by readConfig, so the effective level is the default; the point of
+    // the check is that the operator is told their chosen value is not in force.
+    assert.match(r.stdout, /FAIL\s+every setting in config\.json has the right type/);
+    assert.match(r.stdout, /"enforcement" must be one of "gate", "warn", "off"/);
+  });
+
+  test('fails when facts fall outside the index budget, and says which types vanish entirely', () => {
+    // Truncation follows a fixed type priority, so past a few hundred facts a whole type can
+    // disappear from the always-loaded index while doctor still reports a number of facts.
+    const dir = makeProject();
+    runCli(dir, ['init']);
+    writeConfig(dir, { indexTokenBudget: 1 });
+    writeFactFile(dir, { id: 'fact-0001', type: 'glossary', scope: 'project', confidence: 'high', title: 'SLO means service level objective' });
+    writeFactFile(dir, { id: 'fact-0002', type: 'metric', scope: 'project', confidence: 'high', title: 'p95 latency is 120ms' });
+
+    const r = runCli(dir, ['doctor']);
+    assert.equal(r.status, 1, r.stdout);
+    assert.match(r.stdout, /FAIL\s+index within budget/);
+    assert.match(r.stdout, /2 facts omitted — run `foundry memory prune` for the list/);
+    // Listed in the index's own truncation order (metric outranks glossary), not in file order.
+    assert.match(r.stdout, /no metric, glossary fact reaches the index at all/);
+  });
+
+  test('reports every kind of broken blackboard artifact by wave, file and reason', () => {
+    const dir = makeProject();
+    runCli(dir, ['init']);
+    const wave = path.join(dir, '.foundry', 'blackboard', 'wave-1');
+    fs.mkdirSync(wave, { recursive: true });
+    fs.writeFileSync(path.join(wave, 'truncated.json'), '{"schema": "fact.v1"');
+    fs.writeFileSync(path.join(wave, 'no-schema.json'), JSON.stringify({ id: 'x' }));
+    fs.writeFileSync(path.join(wave, 'unknown-schema.json'), JSON.stringify({ schema: 'made-up.v1' }));
+    const { body, ...withoutBody } = VALID_ARTIFACT; // eslint-disable-line no-unused-vars
+    fs.writeFileSync(path.join(wave, 'incomplete.json'), JSON.stringify(withoutBody));
+    fs.writeFileSync(path.join(wave, 'good.json'), JSON.stringify(VALID_ARTIFACT));
+    // Non-JSON companions are normal in a wave directory and must simply be skipped.
+    fs.writeFileSync(path.join(wave, 'notes.md'), '# scratch notes');
+    // A stray file directly under blackboard/ is not a wave; statSync-ing it as one used to throw.
+    fs.writeFileSync(path.join(dir, '.foundry', 'blackboard', 'README.txt'), 'not a wave');
+
+    const r = runCli(dir, ['doctor']);
+    assert.equal(r.status, 1, r.stdout);
+    assert.match(r.stdout, /FAIL\s+every blackboard artifact validates against its contract/);
+    assert.match(r.stdout, /wave-1\/truncated\.json: not valid JSON/);
+    assert.match(r.stdout, /wave-1\/no-schema\.json: unknown or missing schema/);
+    assert.match(r.stdout, /wave-1\/unknown-schema\.json: unknown or missing schema/);
+    assert.match(r.stdout, /wave-1\/incomplete\.json: 1 violation\(s\)/);
+    assert.doesNotMatch(r.stdout, /good\.json/, 'an artifact that validates must not be listed as broken');
+    assert.doesNotMatch(r.stdout, /notes\.md|README\.txt/, 'only .json files inside a wave directory are artifacts');
+  });
+});
+
+describe('foundry tokens plugin-surface accounting', () => {
+  test('with no settings file naming a plugin, reports a ceiling and says so', () => {
+    // Nothing in any settings scope names a plugin, so the figure is what the whole tree would
+    // cost with every plugin enabled. Presenting that as a measurement of this project made the
+    // headline saving flattering by construction.
+    const dir = makeProject();
+    runCli(dir, ['init']);
+    const r = runCli(dir, ['tokens'], isolatedHome());
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /plugin surface \(upper bound\)/);
+    assert.match(r.stdout, /this is a ceiling, not a measurement/);
+    assert.match(r.stdout, /would add at most/);
+  });
+
+  test('scopes the surface to the plugins the project actually enables', () => {
+    const dir = makeProject();
+    runCli(dir, ['init']);
+    writeSettings(dir, { enabledPlugins: { 'foundry-core@foundry': true } });
+
+    const r = runCli(dir, ['tokens'], isolatedHome());
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /plugin surface \(always loaded\)/);
+    assert.match(r.stdout, /across 1 enabled plugin(?!s)/, 'one plugin is not "1 plugins"');
+    assert.match(r.stdout, /Foundry also adds/);
+    assert.doesNotMatch(r.stdout, /upper bound|ceiling/);
+  });
+
+  test('counts every enabled plugin, and pluralises when there is more than one', () => {
+    const dir = makeProject();
+    runCli(dir, ['init']);
+    writeSettings(dir, { enabledPlugins: { 'foundry-core@foundry': true, 'foundry-dev@foundry': true } });
+
+    const r = runCli(dir, ['tokens'], isolatedHome());
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /across 2 enabled plugins/);
+  });
+
+  test('a later settings scope disabling a plugin wins over an earlier one enabling it', () => {
+    // Claude Code merges enabledPlugins across user, project and project-local scopes, and an
+    // explicit `false` is a deliberate off switch rather than an absence. Treating it as an
+    // absence re-enabled a plugin the user had turned off.
+    const dir = makeProject();
+    runCli(dir, ['init']);
+    writeSettings(dir, { enabledPlugins: { 'foundry-core@foundry': true, 'foundry-dev@foundry': true } });
+    writeSettings(dir, { enabledPlugins: { 'foundry-dev@foundry': false } }, 'settings.local.json');
+
+    const r = runCli(dir, ['tokens'], isolatedHome());
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /across 1 enabled plugin(?!s)/);
+  });
+
+  test('accepts the legacy array form of enabledPlugins', () => {
+    const dir = makeProject();
+    runCli(dir, ['init']);
+    writeSettings(dir, { enabledPlugins: ['foundry-core@foundry'] });
+
+    const r = runCli(dir, ['tokens'], isolatedHome());
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /across 1 enabled plugin(?!s)/);
+  });
+
+  test('an unreadable settings file is skipped rather than crashing the accounting', () => {
+    const dir = makeProject();
+    runCli(dir, ['init']);
+    writeSettings(dir, '{ trailing comma, }');
+
+    const r = runCli(dir, ['tokens'], isolatedHome());
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /plugin surface \(upper bound\)/, 'a settings file we cannot parse names no plugin');
+  });
+
+  test('when the enabled plugins are not in this tree, the surface is zero and no advice is invented', () => {
+    const dir = makeProject();
+    runCli(dir, ['init']);
+    writeSettings(dir, { enabledPlugins: { 'some-other-marketplace-plugin@elsewhere': true } });
+
+    const r = runCli(dir, ['tokens'], isolatedHome());
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /across 0 enabled plugins/);
+    assert.doesNotMatch(r.stdout, /disable the verticals you are not using/,
+      'there is nothing to disable, so telling the user to disable something is noise');
+  });
+
+  test('counts facts, runbooks and blackboard artifacts, and reports the saving over eager loading', () => {
+    const dir = makeProject();
+    runCli(dir, ['init']);
+    writeFactFile(dir, { id: 'fact-0001', type: 'convention', scope: 'project', confidence: 'high', title: 'Tests spawn the CLI' }, 'x'.repeat(400));
+    writeRunbookFile(dir, 'publish', { title: 'Publish a release' }, 'y'.repeat(400));
+    const wave = path.join(dir, '.foundry', 'blackboard', 'wave-1');
+    fs.mkdirSync(path.join(wave, 'nested'), { recursive: true });
+    fs.writeFileSync(path.join(wave, 'a.json'), JSON.stringify(VALID_ARTIFACT));
+    fs.writeFileSync(path.join(wave, 'nested', 'b.json'), JSON.stringify(VALID_ARTIFACT));
+
+    const r = runCli(dir, ['tokens'], isolatedHome());
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /facts, retrieved on demand\s+~\d+ tokens across 1 facts/);
+    assert.match(r.stdout, /runbooks, retrieved on demand\s+~[1-9]\d* tokens/);
+    // The blackboard walk is recursive: an artifact one directory down still costs tokens.
+    assert.match(r.stdout, /blackboard artifacts\s+~[1-9]\d* tokens/);
+    assert.match(r.stdout, /saving\s+~[1-9]\d* tokens per session \(\d+%\)/);
+  });
+});
+
+describe('foundry runbooks listing', () => {
+  test('lists a runbook that declares no trigger without printing an empty trigger line', () => {
+    const dir = makeProject();
+    runCli(dir, ['init']);
+    writeRunbookFile(dir, 'no-trigger', { title: 'A runbook with no trigger' }, 'Do the thing.');
+
+    const r = runCli(dir, ['runbooks']);
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /no-trigger\s+A runbook with no trigger/);
+    assert.doesNotMatch(r.stdout, /trigger:/);
+  });
+
+  test('falls back to the filename when a runbook declares no title', () => {
+    const dir = makeProject();
+    runCli(dir, ['init']);
+    fs.writeFileSync(path.join(dir, '.foundry', 'runbooks', 'untitled.md'), 'No frontmatter at all.\n');
+
+    const r = runCli(dir, ['runbooks']);
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /untitled\s+untitled\.md/, 'a runbook with no title must still be listed, not silently dropped');
   });
 });
 
