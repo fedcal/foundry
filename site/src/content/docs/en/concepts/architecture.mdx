@@ -19,7 +19,7 @@ kernel's gates.
 
 | Layer | Plugin | Owns |
 |---|---|---|
-| Kernel | `foundry-core` | `.foundry/` state, the ten contract schemas, the MCP server, the CLI, all nine hooks, three workflows, three output styles |
+| Kernel | `foundry-core` | `.foundry/` state, the eleven contract schemas, the MCP server, the CLI, all nine hooks, three workflows, three output styles |
 | Vertical | the other eleven | Agents and skills in one domain. No schemas and no state; only `foundry-growth` adds a hook of its own, an advisory claim-substantiation gate. |
 
 `foundry-core` ships `defaultEnabled: true`. Every vertical ships `defaultEnabled: false` and:
@@ -92,7 +92,7 @@ four exist for work.
     - stop-verify.mjs
     - precompact-persist.mjs
     - session-end.mjs
-  - schemas/ Ten JSON Schema 2020-12 contracts, versioned by filename
+  - schemas/ Eleven JSON Schema 2020-12 contracts, versioned by filename
   - agents/ foundry-orchestrator, memory-curator, context-broker, runbook-author
   - skills/ orchestrate, memory, token-budget, runbook, contracts, handoff, foundry-init
   - workflows/ feature-delivery.js, audit-sweep.js, compliance-sweep.js
@@ -110,7 +110,7 @@ answer you get from `foundry memory search` on the command line and the answer a
 The kernel has **zero runtime dependencies**. Everything is Node 20 standard library — `node:fs`,
 `node:path`, `node:crypto`, `node:test`. There is no `npm install` step at any point in using
 Foundry, including the JSON Schema validator, which is roughly 100 lines covering the keyword
-subset the ten contracts actually use.
+subset the eleven contracts actually use.
 
 ## The repository
 

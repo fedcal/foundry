@@ -64,7 +64,7 @@ checked. Adding more prompts does not fix that. Foundry fixes it with mechanism:
 |---|---|
 | Decisions are forgotten between sessions | Four-tier memory; only a 4000-token index is loaded, the rest is retrieved on demand |
 | Subagents return walls of text and blow the budget | A `SubagentStop` gate rejects returns over the handoff budget and demands an artifact instead |
-| Agents hand each other unstructured prose | Ten versioned JSON Schemas; a `PostToolUse` hook returns violations to the author |
+| Agents hand each other unstructured prose | Eleven versioned JSON Schemas; a `PostToolUse` hook returns violations to the author |
 | "All tests pass" without running the tests | A `Stop` gate blocks completion claims with no verification command in the turn |
 | Secrets and destructive commands slip through | `PreToolUse` gates with named rules and documented, expiring overrides |
 | Nobody knows what a session costs | Model routing per agent, a context firewall, and `foundry.mjs tokens` |

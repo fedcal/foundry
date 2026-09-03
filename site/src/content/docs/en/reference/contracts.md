@@ -1,6 +1,6 @@
 ---
 title: Contracts
-description: The ten versioned JSON Schemas agents use to hand work to each other, with required fields and a valid example for each.
+description: The eleven versioned JSON Schemas agents use to hand work to each other, with required fields and a valid example for each.
 sidebar:
   order: 4
 ---
@@ -29,7 +29,7 @@ Validate anything at any time:
 foundry validate finding.v1 .foundry/blackboard/audit/appsec-reviewer.json
 ```
 
-## The ten contracts
+## The eleven contracts
 
 | Contract | Purpose | Typical producer |
 |---|---|---|
@@ -43,6 +43,7 @@ foundry validate finding.v1 .foundry/blackboard/audit/appsec-reviewer.json
 | `estimate.v1` | A three-point estimate with assumptions made explicit | economics agents |
 | `compliance-check.v1` | One control assessed against one jurisdiction pack | legal agents |
 | `handoff.v1` | What one wave passes to the next; enforces the context firewall | every wave boundary |
+| `tracker-item.v1` | One unit of work normalised out of a specific issue tracker into a provider-independent shape | `tracker-operator`, `github-operator` |
 
 ---
 
@@ -396,6 +397,68 @@ optionally `sizeBytes`. Optional at the top level: `openQuestions`, `blockedBy`,
   "openQuestions": ["Redis or Postgres for the reset token store?"],
   "blockedBy": ["Decision on the token store"],
   "tokensSpent": 41200
+}
+```
+
+## `tracker-item.v1`
+
+One unit of work normalised out of a specific issue tracker into a provider-independent shape.
+Flow metrics, forecasting and sprint reporting read this and never the provider payload, so a team
+can change tracker without rewriting every downstream agent.
+
+**Required:** `schema`, `producedBy`, `provider`, `sourceId`, `title`, `type`, `state`,
+`nativeState`.
+
+`provider` is one of `github`, `jira`, `linear`, `gitlab`. `title` is capped at 200 characters.
+`type` is one of `epic`, `story`, `task`, `bug`, `spike`, `chore`, `unmapped`; `state` is one of
+`triage`, `ready`, `in-progress`, `in-review`, `blocked`, `done`, `cancelled`, `unmapped`.
+
+Every normalised field keeps the raw provider value beside it — `type` alongside `nativeType`,
+`state` alongside `nativeState`. That pairing is the point of the contract: normalisation that
+silently discards what it could not map is a defect, so anything that does not fit the enum is
+recorded as `unmapped` with the original preserved rather than forced into the nearest bucket.
+
+`flow.historyRead` states whether the provider's transition history could actually be read. When
+it is `false` the timestamps in `flow` are absent rather than guessed, and cycle time cannot be
+computed from this item — a downstream agent must say so instead of reporting a number.
+
+Optional: `sourceUrl`, `nativeType`, `assignees`, `labels`, `estimate` (`{value, unit}`), `parent`,
+`sprint` (`{id, name, startedAt, endsAt, state}`), `createdAt`, `updatedAt`, `closedAt`, `flow`,
+`blockedBy`, `tracesTo`.
+
+```json
+{
+  "schema": "tracker-item.v1",
+  "producedBy": "tracker-operator",
+  "provider": "jira",
+  "sourceId": "PAY-418",
+  "sourceUrl": "https://example.atlassian.net/browse/PAY-418",
+  "title": "Refund a captured payment without re-authorising the card",
+  "type": "story",
+  "nativeType": "Story",
+  "state": "in-review",
+  "nativeState": "In Code Review",
+  "assignees": ["a.rossi"],
+  "labels": ["payments", "regulatory"],
+  "estimate": { "value": 5, "unit": "point" },
+  "parent": "PAY-400",
+  "sprint": {
+    "id": "42",
+    "name": "Payments 24.9",
+    "startedAt": "2026-08-24T08:00:00Z",
+    "endsAt": "2026-09-07T08:00:00Z",
+    "state": "active"
+  },
+  "createdAt": "2026-08-19T09:12:00Z",
+  "updatedAt": "2026-09-01T16:40:00Z",
+  "flow": {
+    "enteredInProgress": "2026-08-26T09:05:00Z",
+    "enteredReview": "2026-09-01T16:40:00Z",
+    "blockedDays": 1,
+    "historyRead": true
+  },
+  "blockedBy": ["PAY-407"],
+  "tracesTo": ["req-0031"]
 }
 ```
 

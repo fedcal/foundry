@@ -1,6 +1,6 @@
 ---
 title: Contratti
-description: I dieci schemi JSON versionati con cui gli agenti si passano il lavoro, con i campi obbligatori e un esempio valido per ciascuno.
+description: Gli undici schemi JSON versionati con cui gli agenti si passano il lavoro, con i campi obbligatori e un esempio valido per ciascuno.
 sidebar:
   order: 4
 ---
@@ -29,7 +29,7 @@ Puoi validare qualsiasi cosa in qualsiasi momento:
 foundry validate finding.v1 .foundry/blackboard/audit/appsec-reviewer.json
 ```
 
-## I dieci contratti
+## Gli undici contratti
 
 | Contratto | Scopo | Produttore tipico |
 |---|---|---|
@@ -43,6 +43,7 @@ foundry validate finding.v1 .foundry/blackboard/audit/appsec-reviewer.json
 | `estimate.v1` | Una stima a tre punti con le assunzioni esplicitate | agenti di economia |
 | `compliance-check.v1` | Un controllo valutato su un pacchetto di giurisdizione | agenti legali |
 | `handoff.v1` | Ciò che un'ondata passa alla successiva; incarna il firewall di contesto | ogni confine fra ondate |
+| `tracker-item.v1` | Un'unità di lavoro normalizzata da uno specifico issue tracker in una forma indipendente dal fornitore | `tracker-operator`, `github-operator` |
 
 ---
 
@@ -399,6 +400,69 @@ facoltativamente `sizeBytes`. Facoltativi al livello superiore: `openQuestions`,
   "openQuestions": ["Redis or Postgres for the reset token store?"],
   "blockedBy": ["Decision on the token store"],
   "tokensSpent": 41200
+}
+```
+
+## `tracker-item.v1`
+
+Un'unità di lavoro normalizzata da uno specifico issue tracker in una forma indipendente dal
+fornitore. Le metriche di flusso, le previsioni e i report di sprint leggono questo e mai il
+payload del fornitore, così una squadra può cambiare tracker senza riscrivere ogni agente a valle.
+
+**Obbligatori:** `schema`, `producedBy`, `provider`, `sourceId`, `title`, `type`, `state`,
+`nativeState`.
+
+`provider` è uno fra `github`, `jira`, `linear`, `gitlab`. `title` è limitato a 200 caratteri.
+`type` è uno fra `epic`, `story`, `task`, `bug`, `spike`, `chore`, `unmapped`; `state` è uno fra
+`triage`, `ready`, `in-progress`, `in-review`, `blocked`, `done`, `cancelled`, `unmapped`.
+
+Ogni campo normalizzato conserva accanto a sé il valore grezzo del fornitore — `type` accanto a
+`nativeType`, `state` accanto a `nativeState`. Questo accoppiamento è il senso del contratto: una
+normalizzazione che scarta in silenzio ciò che non è riuscita a mappare è un difetto, quindi tutto
+ciò che non rientra nell'enum viene registrato come `unmapped` conservando l'originale, invece di
+essere forzato nella casella più vicina.
+
+`flow.historyRead` dichiara se la cronologia delle transizioni del fornitore è stata davvero
+leggibile. Quando vale `false` i timestamp in `flow` sono assenti anziché indovinati, e il cycle
+time non è calcolabile da questo elemento: un agente a valle deve dirlo, non riportare un numero.
+
+Facoltativi: `sourceUrl`, `nativeType`, `assignees`, `labels`, `estimate` (`{value, unit}`),
+`parent`, `sprint` (`{id, name, startedAt, endsAt, state}`), `createdAt`, `updatedAt`, `closedAt`,
+`flow`, `blockedBy`, `tracesTo`.
+
+```json
+{
+  "schema": "tracker-item.v1",
+  "producedBy": "tracker-operator",
+  "provider": "jira",
+  "sourceId": "PAY-418",
+  "sourceUrl": "https://example.atlassian.net/browse/PAY-418",
+  "title": "Refund a captured payment without re-authorising the card",
+  "type": "story",
+  "nativeType": "Story",
+  "state": "in-review",
+  "nativeState": "In Code Review",
+  "assignees": ["a.rossi"],
+  "labels": ["payments", "regulatory"],
+  "estimate": { "value": 5, "unit": "point" },
+  "parent": "PAY-400",
+  "sprint": {
+    "id": "42",
+    "name": "Payments 24.9",
+    "startedAt": "2026-08-24T08:00:00Z",
+    "endsAt": "2026-09-07T08:00:00Z",
+    "state": "active"
+  },
+  "createdAt": "2026-08-19T09:12:00Z",
+  "updatedAt": "2026-09-01T16:40:00Z",
+  "flow": {
+    "enteredInProgress": "2026-08-26T09:05:00Z",
+    "enteredReview": "2026-09-01T16:40:00Z",
+    "blockedDays": 1,
+    "historyRead": true
+  },
+  "blockedBy": ["PAY-407"],
+  "tracesTo": ["req-0031"]
 }
 ```
 

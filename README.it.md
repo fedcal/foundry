@@ -53,7 +53,7 @@ Foundry lo risolve con dei meccanismi:
 |---|---|
 | Le decisioni si perdono fra una sessione e l'altra | Memoria a quattro livelli: entra in contesto solo un indice da 4000 token, il resto si recupera su richiesta |
 | I subagenti restituiscono muri di testo e bruciano il budget | Un gate su `SubagentStop` rifiuta le risposte oltre il budget di handoff e pretende un artefatto |
-| Gli agenti si passano prosa non strutturata | Dieci JSON Schema versionati; un hook `PostToolUse` rimanda le violazioni all'autore |
+| Gli agenti si passano prosa non strutturata | Undici JSON Schema versionati; un hook `PostToolUse` rimanda le violazioni all'autore |
 | "Tutti i test passano" senza aver eseguito i test | Un gate su `Stop` blocca le dichiarazioni di completamento prive di un comando di verifica nel turno |
 | Segreti e comandi distruttivi che sfuggono | Gate `PreToolUse` con regole nominate e override documentati e a scadenza |
 | Nessuno sa quanto costa una sessione | Routing dei modelli per agente, context firewall e `foundry tokens` |

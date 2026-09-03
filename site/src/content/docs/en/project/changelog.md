@@ -38,8 +38,9 @@ Twelve plugins under one marketplace (`fedcal/foundry`), each declaring
 - **Governed memory** in four tiers: session scratch, atomic facts, runbooks and ADRs. Only
   `.foundry/memory/INDEX.md` is loaded by default, hard-capped at 4000 tokens; everything else is
   retrieved on demand.
-- **Ten contracts** as JSON Schema 2020-12: `fact.v1`, `finding.v1`, `review.v1`, `adr.v1`,
-  `plan.v1`, `requirement.v1`, `risk.v1`, `estimate.v1`, `compliance-check.v1`, `handoff.v1`.
+- **Eleven contracts** as JSON Schema 2020-12: `fact.v1`, `finding.v1`, `review.v1`, `adr.v1`,
+  `plan.v1`, `requirement.v1`, `risk.v1`, `estimate.v1`, `compliance-check.v1`, `handoff.v1`,
+  `tracker-item.v1`.
 - **MCP server** (`foundry`): nine tools — `memory_search`, `memory_write`, `memory_index`,
   `runbook_list`, `runbook_get`, `contract_validate`, `blackboard_write`, `blackboard_read`,
   `token_report` — plus a memory-index resource, a contracts resource and one resource per runbook.

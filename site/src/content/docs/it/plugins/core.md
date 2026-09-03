@@ -10,7 +10,7 @@ sidebar:
 essa.
 
 Non contiene competenza di dominio. Contiene il meccanismo su cui le verticali si appoggiano: i
-livelli di memoria, i dieci schemi JSON che gli agenti si passano, gli hook che bloccano le
+livelli di memoria, gli undici schemi JSON che gli agenti si passano, gli hook che bloccano le
 affermazioni non verificate e i ritorni sovradimensionati dei subagent, il server MCP che rende
 economico il recupero della memoria, e la riga di comando `foundry`.
 
@@ -58,6 +58,7 @@ deliberato e non installando `full`.
 | `contracts` | Si scrive sulla blackboard, arriva un errore di validazione contrattuale, o si progetta l'output di un nuovo agente. |
 | `handoff` | Si conclude un compito delegato, si chiude un'ondata, o si sospende un lavoro che riprenderà qualcun altro. |
 | `token-budget` | Una sessione sembra costosa, si sta per iniziare un lavoro lungo, o l'utente chiede del costo o della pressione sul contesto. |
+| `audit-agent-surface` | Prima di affidare a una macchina un lavoro autonomo, dopo aver installato un plugin o un server MCP, quando la modalità dei permessi è stata allentata, o come controllo periodico. Sola lettura, salvo `--fix`. |
 
 ## Contratti di output
 
@@ -72,9 +73,9 @@ deliberato e non installando `full`.
 
 ### Contratti
 
-Dieci file JSON Schema 2020-12 in `plugins/foundry-core/schemas/`: `fact.v1`, `finding.v1`,
+Undici file JSON Schema 2020-12 in `plugins/foundry-core/schemas/`: `fact.v1`, `finding.v1`,
 `adr.v1`, `plan.v1`, `requirement.v1`, `risk.v1`, `estimate.v1`, `compliance-check.v1`,
-`review.v1`, `handoff.v1`. L'elenco completo dei campi è in
+`review.v1`, `handoff.v1`, `tracker-item.v1`. L'elenco completo dei campi è in
 [Contratti](/foundry/it/reference/contracts/).
 
 ### Hook

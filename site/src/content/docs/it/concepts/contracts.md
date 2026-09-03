@@ -1,6 +1,6 @@
 ---
 title: Contratti
-description: I dieci schemi versionati che gli agenti si passano, come un errore di validazione raggiunge l'agente che lo ha causato, come si legge un errore con JSON pointer e perché una versione pubblicata non si modifica mai.
+description: Gli undici schemi versionati che gli agenti si passano, come un errore di validazione raggiunge l'agente che lo ha causato, come si legge un errore con JSON pointer e perché una versione pubblicata non si modifica mai.
 sidebar:
   order: 4
 ---
@@ -37,7 +37,7 @@ Togli `failureScenario` e l'artefatto viene rifiutato. Un finding senza scenario
 lo schema lo rifiuta — senza nessuna persona nel ciclo, perché il rifiuto torna direttamente
 all'agente che lo ha scritto.
 
-Tutti e dieci gli schemi richiedono `schema` e `producedBy`, e tutti impostano
+Tutti e undici gli schemi richiedono `schema` e `producedBy`, e tutti impostano
 `additionalProperties: false`. Un campo inatteso è un errore invece di essere ignorato in silenzio,
 quindi un refuso nel nome di una proprietà viene intercettato invece che scartato.
 
@@ -58,11 +58,14 @@ Vivono in `plugins/foundry-core/schemas/` come JSON Schema 2020-12, con nome
 | `requirement.v1` | Un requisito tracciabile con criteri di accettazione come comportamento verificabile | `id`, `kind`, `title`, `acceptanceCriteria`, `priority` |
 | `review.v1` | L'esito di una revisione, con i finding ordinati per severità | `target`, `dimension`, `verdict`, `findings`, `summary` |
 | `risk.v1` | Un rischio con esposizione quantificata e una mitigazione con un responsabile | `id`, `title`, `category`, `probability`, `impactEur`, `mitigation`, `owner`, `status` |
+| `tracker-item.v1` | Un'unità di lavoro normalizzata da uno specifico issue tracker | `provider`, `sourceId`, `title` (≤200), `type`, `state`, `nativeState` |
 
-Due di questi codificano una regola più che una forma. `adr.v1` richiede almeno due opzioni, perché
+Tre di questi codificano una regola più che una forma. `adr.v1` richiede almeno due opzioni, perché
 un record di decisione con una sola opzione è una giustificazione scritta a posteriori.
 `compliance-check.v1` richiede un `disclaimer`, perché un output di compliance che non dichiara di
-non essere consulenza legale è una responsabilità.
+non essere consulenza legale è una responsabilità. `tracker-item.v1` richiede `nativeState` accanto
+a ogni `state` normalizzato, perché una normalizzazione che scarta in silenzio ciò che non è
+riuscita a mappare è indistinguibile da una che ha mappato correttamente.
 
 Ogni agente dichiara che cosa consuma e che cosa produce, alla lettera nel proprio corpo:
 

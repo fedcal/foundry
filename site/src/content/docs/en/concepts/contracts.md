@@ -1,6 +1,6 @@
 ---
 title: Contracts
-description: The ten versioned schemas agents hand each other, how a validation failure reaches the agent that caused it, how to read a JSON-pointer error, and why a published version is never edited.
+description: The eleven versioned schemas agents hand each other, how a validation failure reaches the agent that caused it, how to read a JSON-pointer error, and why a published version is never edited.
 sidebar:
   order: 4
 ---
@@ -37,11 +37,11 @@ Remove `failureScenario` and the artifact is rejected. A finding without one is 
 the schema refuses it — with no human in the loop, because the rejection goes straight back to the
 agent that wrote it.
 
-Every one of the ten schemas requires `schema` and `producedBy`, and every one sets
+Every one of the eleven schemas requires `schema` and `producedBy`, and every one sets
 `additionalProperties: false`. An unexpected field is an error rather than a silently ignored one,
 so a typo in a property name is caught instead of dropped.
 
-## The ten contracts
+## The eleven contracts
 
 They live in `plugins/foundry-core/schemas/` as JSON Schema 2020-12, named
 `<noun>.v<major>.schema.json`.
@@ -58,11 +58,14 @@ They live in `plugins/foundry-core/schemas/` as JSON Schema 2020-12, named
 | `requirement.v1` | A traceable requirement with acceptance criteria as verifiable behaviour | `id`, `kind`, `title`, `acceptanceCriteria`, `priority` |
 | `review.v1` | The outcome of a review pass, findings ranked by severity | `target`, `dimension`, `verdict`, `findings`, `summary` |
 | `risk.v1` | A risk with quantified exposure and an owned mitigation | `id`, `title`, `category`, `probability`, `impactEur`, `mitigation`, `owner`, `status` |
+| `tracker-item.v1` | One unit of work normalised out of a specific issue tracker | `provider`, `sourceId`, `title` (≤200), `type`, `state`, `nativeState` |
 
-Two of these encode a rule rather than a shape. `adr.v1` requires at least two options, because a
+Three of these encode a rule rather than a shape. `adr.v1` requires at least two options, because a
 decision record with one option is a justification written after the fact. `compliance-check.v1`
 requires a `disclaimer`, because a compliance output that does not say it is not legal advice is a
-liability.
+liability. `tracker-item.v1` requires `nativeState` beside every normalised `state`, because a
+normalisation that silently discards what it could not map is indistinguishable from one that
+mapped it correctly.
 
 Every agent declares which it consumes and which it produces, verbatim in its body:
 
@@ -139,7 +142,7 @@ segment per level: `/<property>` for an object key, `/<index>` for an array posi
 | `#/probability: above maximum 1` | The `probability` field | A numeric bound |
 | `#/schema: must equal "finding.v1"` | The `schema` field | The artifact declares a different contract from the one it is being checked against |
 
-The validator covers the keyword subset the ten contracts use: `const`, `enum`, `type`, `required`,
+The validator covers the keyword subset the eleven contracts use: `const`, `enum`, `type`, `required`,
 `properties`, `additionalProperties: false`, `minLength`/`maxLength`/`pattern`/`format`
 (`date`, `date-time`, `uri`), `minimum`/`maximum`, `minItems`/`maxItems`/`items`, and `$ref`
 resolved by filename within the same schema directory.

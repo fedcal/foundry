@@ -29,7 +29,7 @@ una di esse non lo eseguirà correttamente.
 | `dependencies` in `plugin.json` | ogni verticale | Ogni verticale dichiara `foundry-core`, quindi installandone una arriva il kernel |
 | `bin/` aggiunto al PATH | `foundry-core` | Espone il comando `foundry` |
 | `mcpServers` fuso da `.mcp.json` | `foundry-core` | Registra il server MCP `foundry` |
-| `hooks` fusi da `hooks/hooks.json` | `foundry-core` | Registra le dieci voci di hook |
+| `hooks` fusi da `hooks/hooks.json` | `foundry-core` | Registra le nove voci di hook |
 | `workflows/` | `foundry-core` | Tre workflow dinamici |
 | `outputStyles` da `output-styles/` | `foundry-core` | Tre stili di output |
 | Oggetto libero `metadata` | ogni plugin | Porta `foundry.vertical` e `foundry.contracts` |

@@ -15,7 +15,7 @@ richiede mai `npm install`: il kernel usa soltanto la libreria standard di Node.
 | Requisito | Versione | Perché |
 |---|---|---|
 | Claude Code | **2.1.x** o successivo | Foundry usa `dependencies`, `workflows/`, le condizioni `if` degli hook e gli eventi `SubagentStop` e `WorktreeCreate`. Il contratto di authoring è verificato sulla 2.1.247. |
-| Node.js | **20+** | La CLI, il server MCP e tutti e dieci gli hook sono moduli ES che usano `node:fs`, `node:path`, `node:crypto` e `await` a livello di modulo. |
+| Node.js | **20+** | La CLI, il server MCP e tutti e nove gli hook sono moduli ES che usano `node:fs`, `node:path`, `node:crypto` e `await` a livello di modulo. |
 | git | facoltativo | L'hook `SessionStart` riporta branch, numero di file modificati e ultimo commit. Senza git salta quel blocco senza segnalare nulla. |
 | [superpowers](https://github.com/obra/superpowers) | facoltativo | Foundry gli delega disciplina TDD, debugging sistematico e verifica del completamento invece di reimplementarli, e ripiega su una checklist ridotta quando non è presente. |
 

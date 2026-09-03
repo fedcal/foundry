@@ -19,7 +19,7 @@ kernel.
 
 | Livello | Plugin | Possiede |
 |---|---|---|
-| Kernel | `foundry-core` | Lo stato `.foundry/`, i dieci schemi di contratto, il server MCP, la CLI, tutti e dieci gli hook, tre workflow, tre output style |
+| Kernel | `foundry-core` | Lo stato `.foundry/`, gli undici schemi di contratto, il server MCP, la CLI, tutti e nove gli hook, tre workflow, tre output style |
 | Verticale | gli altri otto | Agenti e skill di un dominio. Nessun hook, nessuno schema, nessuno stato. |
 
 `foundry-core` ha `defaultEnabled: true`. Ogni verticale ha `defaultEnabled: false` e:
@@ -84,7 +84,7 @@ e gli altri quattro per lavorare.
     - server.mjs Server JSON-RPC su stdio che espone nove strumenti e tre tipi di risorsa
   - .mcp.json Registra il server con il nome `foundry`
   - hooks/
-    - hooks.json Dieci registrazioni di hook su otto eventi
+    - hooks.json Nove registrazioni di hook su otto eventi
     - session-start.mjs
     - prompt-context.mjs
     - guard-bash.mjs
@@ -94,7 +94,7 @@ e gli altri quattro per lavorare.
     - stop-verify.mjs
     - precompact-persist.mjs
     - session-end.mjs
-  - schemas/ Dieci contratti JSON Schema 2020-12, versionati nel nome del file
+  - schemas/ Undici contratti JSON Schema 2020-12, versionati nel nome del file
   - agents/ foundry-orchestrator, memory-curator, context-broker, runbook-author
   - skills/ orchestrate, memory, token-budget, runbook, contracts, handoff, foundry-init
   - workflows/ feature-delivery.js, audit-sweep.js, compliance-sweep.js

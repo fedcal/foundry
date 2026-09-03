@@ -9,7 +9,7 @@ sidebar:
 `dependencies: [foundry-core]`, so installing any vertical pulls the kernel with it.
 
 It ships no domain expertise. What it ships is the machinery the verticals rely on: the memory
-tiers, the ten JSON Schemas agents hand each other, the hooks that block unverified claims and
+tiers, the eleven JSON Schemas agents hand each other, the hooks that block unverified claims and
 oversized subagent returns, the MCP server that makes memory retrieval cheap, and the `foundry`
 command line.
 
@@ -58,6 +58,7 @@ deliberately rather than installing `full`.
 | `contracts` | Writing to the blackboard, reacting to a contract validation error, or designing a new agent's output. |
 | `handoff` | Finishing a delegated task, ending a wave, or pausing work someone else will resume. |
 | `token-budget` | A session feels expensive, before starting long work, or when the user asks about cost or context pressure. |
+| `audit-agent-surface` | Before trusting a machine with autonomous work, after installing a plugin or MCP server, when permission mode has been loosened, or as a periodic check. Read-only unless `--fix` is passed. |
 
 ## Output contracts
 
@@ -72,9 +73,10 @@ deliberately rather than installing `full`.
 
 ### Contracts
 
-Ten JSON Schema 2020-12 files in `plugins/foundry-core/schemas/`: `fact.v1`, `finding.v1`,
+Eleven JSON Schema 2020-12 files in `plugins/foundry-core/schemas/`: `fact.v1`, `finding.v1`,
 `adr.v1`, `plan.v1`, `requirement.v1`, `risk.v1`, `estimate.v1`, `compliance-check.v1`,
-`review.v1`, `handoff.v1`. Full field lists in [Contracts](/foundry/en/reference/contracts/).
+`review.v1`, `handoff.v1`, `tracker-item.v1`. Full field lists in
+[Contracts](/foundry/en/reference/contracts/).
 
 ### Hooks
 
