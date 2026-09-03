@@ -297,6 +297,11 @@ Requirements for a hook test:
   A hook that crashes on a payload is worse than no hook.
 - Where a hook's header states a behaviour contract, each numbered item is a test, named for
   the item it pins. A contract nothing checks is documentation, not a contract.
+- **No raw control bytes in a source file.** A fixture that needs one writes the escape
+  (`'\x00'`), never the byte itself. Node builds the identical string either way, but a raw
+  NUL makes GNU `grep` skip the file in silence, and — if it lands in the first 8000 bytes,
+  where git decides text from binary — makes `git grep -nIE` skip it too, which is the whole
+  of the credential scan in CI. `validate-assets.mjs` rejects this.
 
 ---
 

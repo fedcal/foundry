@@ -247,6 +247,40 @@ for (const name of fs.readdirSync(PLUGINS).filter((d) => fs.statSync(path.join(P
   validateJsonTree(path.join(dir, 'schemas'), (f) => { stats.schemas += 1; return f; });
 }
 
+/* --------------------------------------------------------- source encoding */
+
+/**
+ * A raw control byte in a source file quietly changes what every tool thinks the file is.
+ * git decides text-vs-binary from the first 8000 bytes; GNU grep and file(1) scan the whole
+ * file. A NUL past that window — as a test fixture for "malformed stdin" naturally produces —
+ * leaves git diffing the file normally while `grep -rn` skips it in silence, so a search that
+ * should have matched simply returns nothing and nobody learns why. Move the same byte into
+ * the first 8000 and git calls the file binary too, at which point `git grep -nIE` skips it:
+ * that command is the entirety of the credential scan in .github/workflows/validate.yml, and
+ * a file it skips is a place a real secret can sit unnoticed.
+ *
+ * A test that needs a NUL byte writes the escape `\x00`. Node builds the identical string
+ * from it, and the file stays text for everything else.
+ */
+const TEXT_EXT = new Set(['.mjs', '.cjs', '.js', '.json', '.md', '.mdx', '.yml', '.yaml']);
+
+function checkSourceEncoding(dir) {
+  if (!fs.existsSync(dir)) return;
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (entry.name === 'node_modules' || entry.name === '.git') continue;
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) { checkSourceEncoding(full); continue; }
+    if (!TEXT_EXT.has(path.extname(entry.name).toLowerCase())) continue;
+    const nul = fs.readFileSync(full).indexOf(0);
+    if (nul >= 0) {
+      err(full, `contains a raw NUL byte at offset ${nul} — write it as the escape \\x00 so the file stays text to git, grep and file(1)`);
+    }
+  }
+}
+
+checkSourceEncoding(PLUGINS);
+checkSourceEncoding(path.join(ROOT, 'scripts'));
+
 /* ------------------------------------------------------------------ agents */
 
 function validateAgents(dir) {
