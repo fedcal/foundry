@@ -677,16 +677,17 @@ describe('fanout.mjs pass-through flags', () => {
 
 /* -------------------------------------------------------------- install.mjs */
 
-describe('scripts/install.mjs', () => {
-  function runInstall(args) {
-    try {
-      const stdout = execFileSync('node', [INSTALL, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
-      return { status: 0, stdout, stderr: '' };
-    } catch (err) {
-      return { status: typeof err.status === 'number' ? err.status : 1, stdout: err.stdout ?? '', stderr: err.stderr ?? '' };
-    }
-  }
+/**
+ * Run the installer. spawnSync, not execFileSync, so that stderr is captured on the exit-0
+ * paths too: usage() puts its error line on stderr and its help text on stdout, and several
+ * of the arms below need to read both.
+ */
+function runInstall(args) {
+  const r = spawnSync(process.execPath, [INSTALL, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  return { status: typeof r.status === 'number' ? r.status : 1, stdout: r.stdout ?? '', stderr: r.stderr ?? '' };
+}
 
+describe('scripts/install.mjs', () => {
   test('applies a profile to a fresh target: settings, foundry state and CLAUDE.md are all written', () => {
     const dir = makeProject();
     const r = runInstall(['--target', dir, '--profile', 'startup-mvp']);
@@ -738,5 +739,153 @@ describe('scripts/install.mjs', () => {
 
     assert.notEqual(r.status, 0, 'the installer must not exit 0 when a step it depends on failed');
     assert.doesNotMatch(r.stdout, /\nDone\.\n/, 'the installer must not claim "Done." after a step failed');
+  });
+});
+
+describe('scripts/install.mjs argument validation', () => {
+  test('--help lists every profile that actually ships, and exits 0', () => {
+    const r = runInstall(['--help']);
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    assert.match(r.stdout, /--target <dir>/);
+    // The help text builds this list by reading profiles/ at runtime, so a profile added
+    // without a matching help entry cannot silently go unadvertised — but a profile whose
+    // file is unreadable would vanish from it, which is what this pins.
+    for (const id of PROFILE_IDS) {
+      assert.ok(r.stdout.includes(id), `--help must advertise the shipped profile "${id}"`);
+    }
+  });
+
+  test('an unknown profile names the ones that exist and exits 1', () => {
+    const dir = makeProject();
+    const r = runInstall(['--target', dir, '--profile', 'nope']);
+    assert.equal(r.status, 1);
+    assert.match(r.stderr, /error: unknown profile "nope"/);
+    assert.match(r.stderr, /Available: /);
+    for (const id of PROFILE_IDS) {
+      assert.ok(r.stderr.includes(id), `the error must name the real profile "${id}"`);
+    }
+    assert.equal(fs.existsSync(path.join(dir, '.claude')), false, 'a rejected profile must not half-install');
+  });
+
+  test('an unknown mode exits 1 without touching the target', () => {
+    const dir = makeProject();
+    const r = runInstall(['--target', dir, '--mode', 'sideways']);
+    assert.equal(r.status, 1);
+    assert.match(r.stderr, /error: unknown mode "sideways"/);
+    assert.equal(fs.existsSync(path.join(dir, '.claude')), false, 'a validation failure must not half-install');
+    assert.equal(fs.existsSync(path.join(dir, 'CLAUDE.md')), false);
+    assert.equal(fs.existsSync(path.join(dir, '.foundry')), false);
+  });
+
+  test('an unknown plugin exits 1 and names it', () => {
+    const dir = makeProject();
+    const r = runInstall(['--target', dir, '--plugins', 'foundry-core,foundry-nonexistent']);
+    assert.equal(r.status, 1);
+    assert.match(r.stderr, /error: unknown plugin "foundry-nonexistent"/);
+    assert.equal(fs.existsSync(path.join(dir, '.claude')), false);
+  });
+
+  test('a target directory that does not exist exits 1 rather than creating it', () => {
+    const dir = makeProject();
+    const missing = path.join(dir, 'no-such-project');
+    const r = runInstall(['--target', missing]);
+    assert.equal(r.status, 1);
+    assert.match(r.stderr, /error: target directory does not exist/);
+    assert.equal(fs.existsSync(missing), false, 'the installer must not conjure the target it was told to install into');
+  });
+
+  test('refuses to install Foundry into the Foundry repository itself', () => {
+    const r = runInstall(['--target', REPO]);
+    assert.equal(r.status, 1);
+    assert.match(r.stderr, /refusing to install Foundry into the Foundry repository itself/);
+  });
+
+  test('--dry-run writes nothing at all', () => {
+    const dir = makeProject();
+    const r = runInstall(['--target', dir, '--profile', 'startup-mvp', '--dry-run']);
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    assert.match(r.stdout, /Dry run: nothing was written\./);
+    // It still has to say what it would have done, or the flag is useless.
+    assert.match(r.stdout, /profile: startup-mvp/);
+    assert.match(r.stdout, /plugins: foundry-core, foundry-dev/);
+
+    assert.equal(fs.existsSync(path.join(dir, '.claude')), false, '--dry-run must not create .claude/');
+    assert.equal(fs.existsSync(path.join(dir, 'CLAUDE.md')), false, '--dry-run must not create CLAUDE.md');
+    assert.equal(fs.existsSync(path.join(dir, '.foundry')), false, '--dry-run must not run `foundry init`');
+  });
+});
+
+describe('scripts/install.mjs re-running over an existing install', () => {
+  test('leaves a CLAUDE.md that already references Foundry untouched', () => {
+    const dir = makeProject();
+    const first = runInstall(['--target', dir]);
+    assert.equal(first.status, 0, first.stdout + first.stderr);
+    assert.match(first.stdout, /created CLAUDE\.md/);
+
+    const afterFirst = fs.readFileSync(path.join(dir, 'CLAUDE.md'), 'utf8');
+
+    const second = runInstall(['--target', dir]);
+    assert.equal(second.status, 0, second.stdout + second.stderr);
+    assert.match(second.stdout, /CLAUDE\.md already references Foundry, left unchanged/);
+
+    const afterSecond = fs.readFileSync(path.join(dir, 'CLAUDE.md'), 'utf8');
+    assert.equal(afterSecond, afterFirst, 'a second install must not rewrite a file the user may have edited');
+    assert.equal((afterSecond.match(/## Foundry/g) || []).length, 1, 'the Foundry block must never be appended twice');
+  });
+
+  test('appends its block to a CLAUDE.md the project already had, keeping the original text', () => {
+    const dir = makeProject();
+    fs.writeFileSync(path.join(dir, 'CLAUDE.md'), '# My project\n\nBuild with `make`.\n');
+
+    const r = runInstall(['--target', dir]);
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    assert.match(r.stdout, /updated CLAUDE\.md/);
+
+    const claudeMd = fs.readFileSync(path.join(dir, 'CLAUDE.md'), 'utf8');
+    assert.match(claudeMd, /Build with `make`\./, 'the project\'s own instructions must survive install');
+    assert.match(claudeMd, /## Foundry/);
+    assert.ok(claudeMd.indexOf('Build with') < claudeMd.indexOf('## Foundry'), 'Foundry\'s block is appended, not prepended');
+  });
+});
+
+describe('scripts/install.mjs permission merging', () => {
+  test('never loosens a defaultMode the project already chose', () => {
+    // startup-mvp asks for "acceptEdits"; the project here has already settled on "default",
+    // which is stricter. Relaxing that silently is exactly the class of change a user must
+    // opt into, so the installer keeps what it found and says so.
+    const dir = makeProject();
+    fs.mkdirSync(path.join(dir, '.claude'), { recursive: true });
+    fs.writeFileSync(path.join(dir, '.claude', 'settings.json'), JSON.stringify({
+      permissions: { defaultMode: 'default', allow: ['Read(./pre-existing/**)'] },
+    }));
+
+    const r = runInstall(['--target', dir, '--profile', 'startup-mvp']);
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    assert.match(r.stdout, /keeping defaultMode "default"/);
+    assert.match(r.stdout, /which is more permissive/);
+
+    const settings = readJson(path.join(dir, '.claude', 'settings.json'));
+    assert.equal(settings.permissions.defaultMode, 'default', 'the installer must not widen a mode the user chose');
+    // Refusing the mode must not abort the rest of the merge.
+    assert.ok(settings.permissions.allow.includes('Read(./pre-existing/**)'));
+    assert.ok(settings.permissions.allow.includes('Bash(npm:*)'), 'the profile\'s own allow rules still apply');
+    assert.deepEqual(settings.permissions.deny, ['Read(./.env)', 'Read(./.env.*)']);
+  });
+
+  test('applies a stricter defaultMode, and reports the change', () => {
+    // The mirror image: the project is on "acceptEdits" and oss-library asks for "default",
+    // which is tighter. Tightening is safe, so it is applied without asking.
+    const dir = makeProject();
+    fs.mkdirSync(path.join(dir, '.claude'), { recursive: true });
+    fs.writeFileSync(path.join(dir, '.claude', 'settings.json'), JSON.stringify({
+      permissions: { defaultMode: 'acceptEdits' },
+    }));
+
+    const r = runInstall(['--target', dir, '--profile', 'oss-library']);
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    assert.match(r.stdout, /\+ defaultMode: acceptEdits -> default/);
+
+    const settings = readJson(path.join(dir, '.claude', 'settings.json'));
+    assert.equal(settings.permissions.defaultMode, 'default');
   });
 });

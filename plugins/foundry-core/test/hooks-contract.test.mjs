@@ -611,6 +611,17 @@ describe('stop-verify: the arms that decide whether a completion claim is eviden
     assert.equal(stop(root, { transcript_path: t })?.decision, 'block');
   });
 
+  test('a contentless entry and a Bash call with no command cannot pass for evidence', () => {
+    const root = initRoot();
+    const t = transcript(root, 'shapes.jsonl', [
+      userSays('wrap it up'),
+      { role: 'assistant' }, // neither message.content nor content: nothing to inspect
+      { message: { role: 'assistant', content: [{ type: 'tool_use', id: 'tu-9', name: 'Bash', input: {} }] } }, // a Bash block with no command
+      result('tu-9'),
+    ]);
+    assert.equal(stop(root, { transcript_path: t })?.decision, 'block', 'an empty command must read as "ran nothing", not as an unrecognised runner to wave through');
+  });
+
   test('an unparseable transcript line is skipped, not treated as the end of the evidence', () => {
     const root = initRoot();
     // If the per-line parse threw instead of continuing, the outer catch would call
