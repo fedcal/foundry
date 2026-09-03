@@ -429,6 +429,109 @@ describe('guard-write: field coverage across Write, Edit and NotebookEdit', () =
   });
 });
 
+/**
+ * validate-contract reports a malformed artifact straight back to the agent, so
+ * every arm below is an operator-facing message rather than an internal branch:
+ * if one of them stops firing, an agent writes a broken handoff and is told
+ * nothing. The hook emits and exits, so each arm needs its own fixture.
+ */
+describe('validate-contract: every arm that reports an artifact back to the agent', () => {
+  /** Write a blackboard artifact and return the absolute path the hook receives. */
+  function artifact(root, name, content) {
+    const dir = path.join(root, '.foundry', 'blackboard', 'w1');
+    fs.mkdirSync(dir, { recursive: true });
+    const file = path.join(dir, name);
+    fs.writeFileSync(file, content);
+    return file;
+  }
+
+  const check = (root, file) =>
+    runHook('validate-contract.mjs', { tool_name: 'Write', tool_input: { file_path: file } }, root);
+
+  test('a blackboard .json that is not parseable JSON is reported back', () => {
+    const root = initRoot();
+    const out = check(root, artifact(root, 'a.json', '{ not json'));
+    assert.ok(out, 'expected a report for an unparseable artifact, got silence');
+    assert.equal(out.hookSpecificOutput.hookEventName, 'PostToolUse');
+    assert.match(out.hookSpecificOutput.additionalContext, /not valid JSON/);
+  });
+
+  test('a top-level array is rejected as not-an-object', () => {
+    const root = initRoot();
+    const out = check(root, artifact(root, 'a.json', '[]'));
+    assert.ok(out, 'expected a report for a top-level array, got silence');
+    assert.match(out.hookSpecificOutput.additionalContext, /must contain a JSON object/);
+    assert.match(out.hookSpecificOutput.additionalContext, /an array/);
+  });
+
+  test('a JSON scalar is rejected and named in the message', () => {
+    const root = initRoot();
+    const out = check(root, artifact(root, 'a.json', '"hello"'));
+    assert.ok(out, 'expected a report for a scalar artifact, got silence');
+    assert.match(out.hookSpecificOutput.additionalContext, /must contain a JSON object/);
+    // The other arm of the same ternary: the value itself reaches the operator.
+    assert.match(out.hookSpecificOutput.additionalContext, /hello/);
+  });
+
+  test('an artifact with no schema field names the requirement', () => {
+    const root = initRoot();
+    const out = check(root, artifact(root, 'a.json', JSON.stringify({ producedBy: 'x' })));
+    assert.ok(out, 'expected a report for a schema-less artifact, got silence');
+    assert.match(out.hookSpecificOutput.additionalContext, /no `schema` field/);
+  });
+
+  test('an unknown contract id lists the available contracts', () => {
+    const root = initRoot();
+    const out = check(root, artifact(root, 'a.json', JSON.stringify({ schema: 'nope.v9', producedBy: 'x' })));
+    assert.ok(out, 'expected a report for an unknown contract, got silence');
+    const ctx = out.hookSpecificOutput.additionalContext;
+    assert.match(ctx, /unknown contract "nope\.v9"/);
+    // Proves the directory listing really ran rather than a hardcoded string.
+    assert.match(ctx, /finding\.v1/);
+  });
+
+  test('a relative file_path outside the blackboard stays silent', () => {
+    const root = initRoot();
+    fs.mkdirSync(path.join(root, 'src'), { recursive: true });
+    fs.writeFileSync(path.join(root, 'src', 'a.json'), '{ not json');
+    // Relative paths are resolved against the project root before the prefix
+    // check, so an ordinary source file must not be validated as an artifact.
+    const out = runHook('validate-contract.mjs', { tool_name: 'Write', tool_input: { file_path: 'src/a.json' } }, root);
+    assert.equal(out, null, 'a file outside .foundry/blackboard/ must not be validated');
+  });
+});
+
+describe('session-start: the two arms that only fire on a populated project', () => {
+  test('lists runbooks when the project has one', () => {
+    const root = initRoot();
+    const dir = path.join(root, '.foundry', 'runbooks');
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, 'deploy.md'),
+      '---\ntitle: Deploy to production\ntrigger: deploy, ship, release\n---\n\n# Deploy\n');
+
+    const out = runHook('session-start.mjs', { hook_event_name: 'SessionStart' }, root);
+    assert.ok(out, 'expected SessionStart to inject project state');
+    const ctx = out.hookSpecificOutput.additionalContext;
+    assert.match(ctx, /## Runbooks available/);
+    assert.match(ctx, /deploy/);
+    // The trigger is what makes the listing actionable rather than decorative.
+    assert.match(ctx, /ship, release/);
+  });
+
+  test('truncates when the context exceeds indexTokenBudget', () => {
+    const root = initRoot();
+    fs.writeFileSync(path.join(root, '.foundry', 'config.json'), JSON.stringify({ indexTokenBudget: 1 }));
+    writeFact(root, { title: 'Auth uses Keycloak', body: 'Delegated identity.', type: 'decision' }, '2026-08-27');
+
+    const { stdout } = spawnHook('session-start.mjs', JSON.stringify({ cwd: root, hook_event_name: 'SessionStart' }), root);
+    const trimmed = stdout.trim();
+    // A single parse pins that the truncating arm terminates: two concatenated
+    // objects would mean SessionStart received the payload twice.
+    const out = JSON.parse(trimmed);
+    assert.match(out.hookSpecificOutput.additionalContext, /truncated to protect the session token budget/);
+  });
+});
+
 describe('robustness: malformed JSON and missing fields never crash a hook or write to stderr', () => {
   for (const file of ALL_HOOK_FILES) {
     test(`${file} handles malformed JSON on stdin`, () => {
