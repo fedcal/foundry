@@ -276,6 +276,115 @@ describe('foundry profile', () => {
     assert.notEqual(r.status, 0);
     assert.match(r.stderr, /No profile "does-not-exist"/);
   });
+
+  test('an unknown profile name lists the ones that exist', () => {
+    // Every sibling error path in bin/foundry.mjs names a recovery; this one printed
+    // `No profile "x".` and stopped, leaving the user to guess what was spellable.
+    const dir = makeProject();
+    const r = runCli(dir, ['profile', 'startup']);
+    assert.notEqual(r.status, 0);
+    assert.match(r.stderr, /Available: /);
+    assert.match(r.stderr, /startup-mvp/, 'the near-miss the user probably meant must be in the list');
+  });
+});
+
+/**
+ * profilesDir() probes three fixed candidates, and candidate 2 always resolves to the
+ * checked-in profiles/ of whichever clone is executing. Candidate 3 was therefore never
+ * consulted, the directory could never be absent, and every file the CLI could name was one
+ * of the five shipped profiles — all valid objects with a plugins array. The four error
+ * messages below were unreachable from any test, including the three written for exactly the
+ * user the CLI's own message invites to hand-write a profile into ./profiles/.
+ *
+ * FOUNDRY_PROFILES_DIR pins the directory, mirroring FOUNDRY_PROJECT_DIR. These tests are why
+ * it exists.
+ */
+describe('foundry profile with FOUNDRY_PROFILES_DIR', () => {
+  const withProfiles = (files) => {
+    const dir = makeProject();
+    const profiles = path.join(dir, 'profiles-fixture');
+    fs.mkdirSync(profiles, { recursive: true });
+    for (const [name, body] of Object.entries(files)) {
+      fs.writeFileSync(path.join(profiles, name), typeof body === 'string' ? body : JSON.stringify(body));
+    }
+    return { dir, env: { FOUNDRY_PROFILES_DIR: profiles } };
+  };
+
+  test('a hand-written profile is applied, so the override is real and not just a test seam', () => {
+    const { dir, env } = withProfiles({ 'mine.json': { id: 'mine', plugins: ['foundry-core'] } });
+    const r = runCli(dir, ['profile', 'mine'], env);
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    assert.match(r.stdout, /Applied profile "mine"/);
+    const settings = readJson(path.join(dir, '.claude', 'settings.json'));
+    assert.equal(settings.enabledPlugins['foundry-core@foundry'], true);
+  });
+
+  test('a profile with no "id" is named by its filename rather than reported as undefined', () => {
+    const { dir, env } = withProfiles({ 'unnamed.json': { plugins: ['foundry-core'] } });
+    const r = runCli(dir, ['profile', 'unnamed'], env);
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    assert.match(r.stdout, /Applied profile "unnamed"/);
+  });
+
+  test('a missing directory is reported as such by `foundry profile`', () => {
+    const dir = makeProject();
+    const r = runCli(dir, ['profile'], { FOUNDRY_PROFILES_DIR: path.join(dir, 'nowhere') });
+    assert.notEqual(r.status, 0);
+    assert.match(r.stderr, /No profiles directory found/);
+    assert.match(r.stderr, /copy a profile JSON into \.\/profiles\//, 'the message must name a way out');
+  });
+
+  test('a missing directory is reported as such by `foundry profile <name>` too', () => {
+    // The guard sat inside the no-argument branch, so naming a profile on a plugin-only
+    // install answered `No profile "startup-mvp".` — true, but not the cause, and with no
+    // next step. The two spellings of the command must not disagree about why it failed.
+    const dir = makeProject();
+    const r = runCli(dir, ['profile', 'startup-mvp'], { FOUNDRY_PROFILES_DIR: path.join(dir, 'nowhere') });
+    assert.notEqual(r.status, 0);
+    assert.match(r.stderr, /No profiles directory found/);
+  });
+
+  test('an empty directory says so rather than listing nothing after "Available:"', () => {
+    const { dir, env } = withProfiles({});
+    const r = runCli(dir, ['profile', 'anything'], env);
+    assert.notEqual(r.status, 0);
+    assert.match(r.stderr, /The profiles directory is empty/);
+  });
+
+  test('a profile that is a JSON array is refused, not applied', () => {
+    const { dir, env } = withProfiles({ 'arr.json': ['foundry-core'] });
+    const r = runCli(dir, ['profile', 'arr'], env);
+    assert.notEqual(r.status, 0);
+    assert.match(r.stderr, /is not a JSON object/);
+    assert.equal(fs.existsSync(path.join(dir, '.claude', 'settings.json')), false, 'a refused profile must write nothing');
+  });
+
+  test('a profile with no "plugins" array is refused, because there is nothing to apply', () => {
+    const { dir, env } = withProfiles({ 'nop.json': { id: 'nop', description: 'forgot the plugins key' } });
+    const r = runCli(dir, ['profile', 'nop'], env);
+    assert.notEqual(r.status, 0);
+    assert.match(r.stderr, /declares no "plugins" array/);
+  });
+
+  test('a "plugins" array holding a non-string is refused rather than half-applied', () => {
+    const { dir, env } = withProfiles({ 'mixed.json': { id: 'mixed', plugins: ['foundry-core', 7] } });
+    const r = runCli(dir, ['profile', 'mixed'], env);
+    assert.notEqual(r.status, 0);
+    assert.match(r.stderr, /declares no "plugins" array/);
+    assert.equal(fs.existsSync(path.join(dir, '.claude', 'settings.json')), false);
+  });
+
+  test('an unparseable profile is refused, and the listing survives one bad file', () => {
+    const { dir, env } = withProfiles({ 'broken.json': '{ "id": "broken",', 'ok.json': { id: 'ok', plugins: ['foundry-core'] } });
+    const named = runCli(dir, ['profile', 'broken'], env);
+    assert.notEqual(named.status, 0);
+    assert.match(named.stderr, /is not a JSON object/);
+    // One unreadable file used to take the whole listing down with a raw SyntaxError.
+    const listed = runCli(dir, ['profile'], env);
+    assert.equal(listed.status, 0, listed.stdout + listed.stderr);
+    assert.match(listed.stdout, /not valid JSON — skipped/);
+    assert.match(listed.stdout, /ok/);
+  });
 });
 
 /* ---------------------------------------------------------------- validate */

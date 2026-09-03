@@ -257,8 +257,13 @@ function enabledPluginNames() {
  * When the plugin tree cannot be located we say so rather than quietly reporting zero.
  */
 function pluginSurface() {
+  // No existence guard: this resolves to the grandparent of the file currently executing, so
+  // it exists by construction, and path.resolve clamps at the filesystem root rather than
+  // walking past it. The guard that used to stand here could not be made true by any input,
+  // environment or layout — dead code in the shape of a live check, which reads as a handled
+  // case and is not one. If this ever needs to survive a pruned install, make the directory
+  // injectable so the arm is reachable and can be tested.
   const pluginsDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
-  if (!fs.existsSync(pluginsDir)) return null;
   const enabled = enabledPluginNames();
   const describe = (file) => {
     const m = fs.readFileSync(file, 'utf8').match(/^description:\s*(.+)$/m);
@@ -307,9 +312,7 @@ function tokens() {
   console.log(`  runbooks, retrieved on demand  ~${runbookTokens} tokens`);
   console.log(`  blackboard artifacts           ~${bbTokens} tokens (never loaded wholesale)`);
   const surface = pluginSurface();
-  if (!surface) {
-    console.log('  plugin surface (always loaded)  not measured — plugin tree not found from here');
-  } else if (surface.scoped) {
+  if (surface.scoped) {
     console.log(`  plugin surface (always loaded)  ~${surface.total} tokens — ${surface.agents} agent and ${surface.skills} skill descriptions across ${surface.plugins} enabled plugin${surface.plugins === 1 ? '' : 's'}`);
   } else {
     // Nothing in any settings scope names a plugin, so this is not a measurement of what
@@ -323,7 +326,7 @@ function tokens() {
   console.log(`  eager loading would cost       ~${eager} tokens per session`);
   console.log(`  index-first costs              ~${lazy} tokens per session`);
   if (eager > 0) console.log(`  saving                         ~${Math.max(0, eager - lazy)} tokens per session (${Math.round((1 - lazy / Math.max(eager, 1)) * 100)}%)`);
-  if (surface && surface.plugins > 0) {
+  if (surface.plugins > 0) {
     console.log(`\n  The saving above is about memory only. Foundry ${surface.scoped ? 'also adds' : 'would add at most'} ~${surface.total} tokens`);
     console.log('  of plugin surface to every session; disable the verticals you are not using.');
   }
@@ -369,6 +372,13 @@ function validateCmd([schemaId, target]) {
  *  whether Foundry runs from a clone or from an installed plugin. Try both rather than
  *  assuming one layout. */
 function profilesDir() {
+  // FOUNDRY_PROFILES_DIR pins the directory outright, exactly as FOUNDRY_PROJECT_DIR pins the
+  // root above. Without it, candidate 2 always resolves to the checked-in profiles/ of
+  // whichever clone is executing, so candidate 3 is never consulted and the directory can
+  // never be absent — which made every error message below this function unreachable from a
+  // test, including the three written for the user the message at line 403 invites to drop a
+  // hand-written profile into ./profiles/.
+  if (process.env.FOUNDRY_PROFILES_DIR) return path.resolve(process.env.FOUNDRY_PROFILES_DIR);
   const candidates = [
     path.join(HERE, '..', 'profiles'),                    // bundled inside the plugin
     path.join(HERE, '..', '..', '..', 'profiles'),        // repository / marketplace clone
@@ -397,13 +407,18 @@ function mergeEnabledPlugins(current, plugins) {
 
 function profile([name]) {
   const dir = profilesDir();
+  // This guard used to sit inside the no-argument branch, so on a plugin-only install
+  // `foundry profile startup-mvp` answered `No profile "startup-mvp".` — which names neither
+  // the real cause (there is no profiles directory at all) nor anything the user could run
+  // next. Checking it before the split means both spellings of the command say the same true
+  // thing.
+  if (!fs.existsSync(dir)) {
+    console.error('No profiles directory found next to this installation.');
+    console.error('Profiles ship with the Foundry repository: clone it, or copy a profile JSON into ./profiles/.');
+    process.exitCode = 1;
+    return;
+  }
   if (!name) {
-    if (!fs.existsSync(dir)) {
-      console.error('No profiles directory found next to this installation.');
-      console.error('Profiles ship with the Foundry repository: clone it, or copy a profile JSON into ./profiles/.');
-      process.exitCode = 1;
-      return;
-    }
     console.log('Available profiles:\n');
     for (const f of fs.readdirSync(dir).filter((f) => f.endsWith('.json'))) {
       // One unreadable file in profiles/ used to take the whole listing down with a raw
@@ -425,7 +440,13 @@ function profile([name]) {
   }
   const file = path.join(dir, `${name}.json`);
   if (!fs.existsSync(file)) {
-    console.error(`No profile "${name}".`);
+    // Every sibling error in this file names a recovery — the id-format rejection points at
+    // `foundry profile`, the unknown-contract error lists the schemas — and this one did not.
+    // The names come from the filenames rather than each profile's `id` field, because the
+    // lookup above is by filename: an id that disagrees with its filename is not something
+    // the user could type here.
+    const available = fs.readdirSync(dir).filter((f) => f.endsWith('.json')).map((f) => f.replace(/\.json$/, ''));
+    console.error(`No profile "${name}".${available.length ? ` Available: ${available.sort().join(', ')}` : ' The profiles directory is empty.'}`);
     process.exitCode = 1;
     return;
   }
