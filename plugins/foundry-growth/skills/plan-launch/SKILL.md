@@ -93,7 +93,7 @@ until a pristine tree can be produced.
 Then execute every blocking check in `references/readiness-checklist.md` against `$tmp` and
 record, per check, the exact command, its exit status and the observed output — for this
 repository that includes `node scripts/validate-assets.mjs`, `node --test
-'plugins/foundry-core/test/*.test.mjs'`, `(cd site && npm run build)`, the presence of `LICENSE`,
+'plugins/*/test/*.test.mjs'`, `(cd site && npm run build)`, the presence of `LICENSE`,
 `NOTICE`, `SECURITY.md` and `.github/ISSUE_TEMPLATE/`, and running the install command extracted
 verbatim from `README.md` rather than the one you remember writing.
 

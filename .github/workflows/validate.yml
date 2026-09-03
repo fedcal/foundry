@@ -27,8 +27,8 @@ jobs:
           node-version: 22
       - name: Validate plugin manifests, agents, skills, hooks and workflows
         run: node scripts/validate-assets.mjs
-      - name: Kernel unit tests
-        run: node --test 'plugins/foundry-core/test/*.test.mjs'
+      - name: Unit tests for every plugin
+        run: node --test 'plugins/*/test/*.test.mjs'
       - name: Syntax check every executable asset
         run: |
           set -euo pipefail

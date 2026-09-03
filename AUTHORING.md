@@ -260,6 +260,44 @@ Available: `agent(prompt, opts)`, `parallel(thunks)`, `pipeline(items, ...stages
 Prefer `pipeline()` over `parallel()`: use a barrier only when a stage genuinely needs every
 prior result at once.
 
+### 1.7 Tests for executable assets (`plugins/<plugin>/test/*.test.mjs`)
+
+Every hook that ships to a user has a test. A hook is the one asset class that runs without
+anybody asking it to, on someone else's machine, with the power to block their work — and it
+is the class whose failures are silent, because Claude Code treats a hook error as
+non-blocking and lets the tool call through. An untested gate and an absent gate are
+indistinguishable until the day the gate was supposed to matter.
+
+Tests live under `plugins/<plugin>/test/`, use `node:test` only, and are run — locally, in CI
+and in the release runbook — by exactly one command:
+
+```bash
+node --test 'plugins/*/test/*.test.mjs'
+```
+
+That glob is deliberately plugin-agnostic. It previously named `foundry-core`, and the effect
+was that `foundry-growth/hooks/guard-claims.mjs` — 470 lines, a live `PreToolUse` gate, shipped
+in 0.1.0 — was invisible to every local check, to CI and to the publish runbook's own gate. No
+regression in it could ever have been caught. Never narrow this glob to a single plugin again;
+if a new plugin needs a different runner, widen the command rather than adding a second one
+that someone will forget to run.
+
+Requirements for a hook test:
+
+- **Spawn the hook as a real process** and assert on the raw JSON on stdout. Importing the
+  module and asserting on a return value tests a different program from the one that ships;
+  the wire format *is* the contract (§1.5), and only a subprocess exercises it.
+- **Assert the exit code and that stderr is empty.** Foundry hooks communicate through stdout
+  and exit 0; stderr is reserved for the exit-2 blocking channel that no Foundry hook uses.
+- **Cover the opt-in arms, not just the firing one.** Every gate is silent before
+  `foundry init`, under `enforcement: "off"`, under its own flag, and under an unexpired
+  override — and must still fire under an *expired* one. Those arms are where a gate silently
+  dies, and they are the arms nobody writes a test for.
+- **Cover the failure-open paths**: unparseable stdin, an unexpected shape, a missing field.
+  A hook that crashes on a payload is worse than no hook.
+- Where a hook's header states a behaviour contract, each numbered item is a test, named for
+  the item it pins. A contract nothing checks is documentation, not a contract.
+
 ---
 
 ## 2. Model and effort routing (token economy)

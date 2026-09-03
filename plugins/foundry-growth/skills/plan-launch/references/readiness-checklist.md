@@ -63,7 +63,7 @@ For this repository, the three checks `CLAUDE.md` declares mandatory before a co
 
 ```bash
 (cd "$tmp" && node scripts/validate-assets.mjs)
-(cd "$tmp" && node --test 'plugins/foundry-core/test/*.test.mjs')
+(cd "$tmp" && node --test 'plugins/*/test/*.test.mjs')
 (cd "$tmp/site" && npm ci && npm run build)
 ```
 

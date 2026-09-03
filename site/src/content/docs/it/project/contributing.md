@@ -19,7 +19,7 @@ Eseguili tutti e tre prima di aprire una pull request. Sono gli stessi controlli
 
 ```bash
 node scripts/validate-assets.mjs                    # every asset against AUTHORING.md
-node --test 'plugins/foundry-core/test/*.test.mjs'  # kernel unit tests
+node --test 'plugins/*/test/*.test.mjs'  # test unitari, tutti i plugin
 cd site && npm ci && npm run build                  # the documentation site
 ```
 

@@ -33,7 +33,7 @@ Each must be independently confirmed before step 1.
 
 1. `gh auth status` reports an authenticated account with `repo` and `workflow` scopes.
 2. `node scripts/validate-assets.mjs` exits 0 with **zero errors**.
-3. `node --test 'plugins/foundry-core/test/*.test.mjs'` passes every test.
+3. `node --test 'plugins/*/test/*.test.mjs'` passes every test.
 4. `cd site && npm ci && npm run build` completes.
 5. `git status --porcelain` shows only files you intend to publish.
 6. The CI credential scan is clean. Run the exact command from the `secrets` job of
@@ -46,7 +46,7 @@ Each must be independently confirmed before step 1.
 
 ```bash
 node scripts/validate-assets.mjs
-node --test 'plugins/foundry-core/test/*.test.mjs'
+node --test 'plugins/*/test/*.test.mjs'
 (cd site && npm ci && npm run build)
 ```
 
@@ -177,7 +177,7 @@ caches and archives all copy it within minutes. A secret pushed here must be rot
 - **`git` writes to stderr in an empty repository.** Any hook shelling out to `git log` must pass
   `stdio: ['ignore', 'pipe', 'ignore']`, or the error text leaks into the session on first run.
 - **`node --test <dir>` does not work like a glob.** Use
-  `node --test 'plugins/foundry-core/test/*.test.mjs'`; passing the directory reports
+  `node --test 'plugins/*/test/*.test.mjs'`; passing the directory reports
   `MODULE_NOT_FOUND`.
 - **`base` matters for Pages project sites.** With `base: '/foundry'`, every internal link must
   include it. A link written as `/en/start/` 404s in production while working in `astro dev`.

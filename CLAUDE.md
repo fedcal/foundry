@@ -19,7 +19,7 @@ Before publishing or releasing, read the `publish-release` runbook with `runbook
 
 ```bash
 node scripts/validate-assets.mjs                    # assets against AUTHORING.md
-node --test 'plugins/foundry-core/test/*.test.mjs'  # kernel unit tests
+node --test 'plugins/*/test/*.test.mjs'  # unit tests, every plugin
 (cd site && npm run build)                          # bilingual documentation site
 ```
 

@@ -9,7 +9,7 @@
 ## Checks
 
 - [ ] `node scripts/validate-assets.mjs` passes
-- [ ] `node --test 'plugins/foundry-core/test/*.test.mjs'` passes
+- [ ] `node --test 'plugins/*/test/*.test.mjs'` passes
 - [ ] `cd site && npm ci && npm run build` passes (if the site changed)
 - [ ] Kernel behaviour changes come with a test that fails without the change
 

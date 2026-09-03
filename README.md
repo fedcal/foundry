@@ -165,7 +165,7 @@ Read [AUTHORING.md](./AUTHORING.md) first — it is normative, and CI enforces i
 
 ```bash
 node scripts/validate-assets.mjs                    # every asset against AUTHORING.md
-node --test 'plugins/foundry-core/test/*.test.mjs'  # kernel unit tests
+node --test 'plugins/*/test/*.test.mjs'  # unit tests, every plugin
 cd site && npm ci && npm run build                  # the documentation site
 ```
 

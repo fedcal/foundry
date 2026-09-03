@@ -31,7 +31,7 @@ removing the domain words would leave a generic template, it is not ready.
 
 ```bash
 node scripts/validate-assets.mjs                    # every asset against AUTHORING.md
-node --test 'plugins/foundry-core/test/*.test.mjs'  # kernel unit tests
+node --test 'plugins/*/test/*.test.mjs'  # unit tests, every plugin
 cd site && npm ci && npm run build                  # documentation site
 ```
 
